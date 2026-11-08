@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Borde de «te falta marcar» (desde las 21:00). Es blanco: el widget lo pinta del color de la app. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <corners android:radius="@dimen/widget_radius" />
+    <!-- Sin relleno explícito, el filtro de color pintaría todo el widget. -->
+    <solid android:color="#00000000" />
+    <stroke android:width="1.6dp" android:color="#E6FFFFFF" />
+</shape>

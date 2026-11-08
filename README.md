@@ -3,7 +3,9 @@
 Raíz del sitio donde viven **Val Q** (`/val-quirurgico/`) y **Bitácora** (`/Bitacora/`).
 
 - `.well-known/assetlinks.json`: verificación (Digital Asset Links) de la app de Android «Rachas», para que abra las dos apps a pantalla completa y pueda recibir su resumen para los widgets.
-- `android/`: código de «Rachas», una app de Android que abre Val Q y Bitácora con Chrome (Trusted Web Activity) y pone widgets con la racha, los últimos 7 días y una montaña con el porcentaje de cada día. Las apps web le mandan **solo números**; los datos siguen cifrados en Chrome.
+- `android/`: código de «Rachas», una app de Android que abre Val Q y Bitácora con Chrome (Trusted Web Activity) y pone widgets 4×2 con la racha, el día de hoy y la semana (una montaña por día). Las apps web le mandan solo lo que muestra el widget (Bitácora, **solo números**); los datos siguen cifrados en Chrome.
+  - Los widgets cambian de día solos a medianoche (la app web manda también mañana y pasado mañana) y desde las 21:00 muestran un borde si falta marcar.
+  - A las 22:30 llega un recordatorio para anotar el día (si ya anotaste todo, no aparece). Sin internet: alarmas y notificaciones locales.
 
 ## Compilar el APK
 
@@ -16,3 +18,13 @@ RACHAS_KEYSTORE=/ruta/rachas.jks RACHAS_KEYSTORE_PASSWORD=... gradle assembleRel
 ```
 
 Si cambia la llave, actualiza la huella SHA-256 en `.well-known/assetlinks.json`.
+
+## Probar los widgets sin teléfono
+
+`gradle :app:testDebugUnitTest` dibuja los widgets con datos de ejemplo (Robolectric) y guarda las imágenes en `app/build/previews` (o en `RACHAS_PREVIEWS`). Con `RACHAS_PREVIEW_RES=1` también actualiza la vista previa de la lista de widgets (`res/drawable-nodpi/preview_*.png`).
+
+## Cómo llegan los datos al widget
+
+1. La actividad de lanzamiento hace `warmup()`, abre una sesión y valida `use_as_origin` contra `assetlinks.json`.
+2. Cuando la página terminó de cargar, pide el canal (`requestPostMessageChannel`). Chrome entra por `PostMessageService` (declarado en el manifiesto: sin él no llega nada).
+3. La página recibe el puerto con origen `android-app://<sitio>/<paquete>`, manda el resumen y la app responde `rachas:ok`. En Ajustes de cada app se ve «Widget conectado ✓».

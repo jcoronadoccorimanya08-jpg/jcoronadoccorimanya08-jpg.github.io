@@ -4,9 +4,10 @@
     android:initialLayout="@layout/widget_valq"
     android:minWidth="250dp"
     android:minHeight="110dp"
-    android:previewLayout="@layout/widget_valq"
+    android:previewImage="@drawable/preview_valq"
+    android:previewLayout="@layout/widget_valq_preview"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="4"
     android:targetCellHeight="2"
-    android:updatePeriodMillis="1800000"
+    android:updatePeriodMillis="10800000"
     android:widgetCategory="home_screen" />

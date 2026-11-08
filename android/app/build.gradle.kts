@@ -11,8 +11,8 @@ android {
         applicationId = "io.github.jcoronadoccorimanya08.rachas"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "2.0"
+        versionCode = 3
+        versionName = "3.0"
     }
 
     signingConfigs {
@@ -39,8 +39,18 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    // Pruebas con Robolectric: dibujan los widgets con datos de ejemplo (sin teléfono) y guardan las imágenes.
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
     implementation("androidx.browser:browser:1.8.0")
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.16.1")
 }

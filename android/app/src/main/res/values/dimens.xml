@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Esquinas del widget. En Android 12 o más se usan las del sistema (las mismas de tus otros widgets). -->
+    <dimen name="widget_radius">24dp</dimen>
+</resources>
