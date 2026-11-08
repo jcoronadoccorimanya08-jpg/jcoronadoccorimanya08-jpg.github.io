@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Rachas</string>
+    <string name="widget_valq">Val Q · racha</string>
+    <string name="widget_valq_desc">Tu racha, tus últimos 7 días y tu montaña de cada día.</string>
+    <string name="widget_bitacora">Racha discreta</string>
+    <string name="widget_bitacora_desc">Solo la llama, los días y tu montaña. Sin nombres.</string>
+    <string name="asset_statements" translatable="false">[{\"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": {\"namespace\": \"web\", \"site\": \"https://jcoronadoccorimanya08-jpg.github.io\"}}]</string>
+</resources>

@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls", "delegate_permission/common.use_as_origin"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.jcoronadoccorimanya08.rachas",
+      "sha256_cert_fingerprints": ["34:D5:61:BB:0A:D7:1F:41:14:84:10:1D:FC:11:19:AE:92:16:F3:E2:93:3C:60:10:07:7D:D0:2B:0B:79:55:22"]
+    }
+  }
+]

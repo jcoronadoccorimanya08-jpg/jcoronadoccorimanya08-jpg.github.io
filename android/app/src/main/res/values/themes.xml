@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Rachas" parent="android:Theme.Material.NoActionBar" />
+    <!-- La actividad que abre la app web no se ve: es transparente y sin animación. -->
+    <style name="Theme.Rachas.Launcher" parent="android:Theme.Translucent.NoTitleBar">
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:windowNoDisplay">false</item>
+    </style>
+</resources>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <queries>
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
+        </intent>
+    </queries>
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_valq"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Rachas">
+
+        <meta-data
+            android:name="asset_statements"
+            android:resource="@string/asset_statements" />
+
+        <!-- Val Q: abre la app web a pantalla completa (Trusted Web Activity) y recibe el resumen para el widget. -->
+        <activity
+            android:name=".ValQActivity"
+            android:exported="true"
+            android:icon="@mipmap/ic_valq"
+            android:label="Val Q"
+            android:launchMode="singleTask"
+            android:taskAffinity=".valq"
+            android:theme="@style/Theme.Rachas.Launcher">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".BitacoraActivity"
+            android:exported="true"
+            android:icon="@mipmap/ic_bitacora"
+            android:label="Bitácora"
+            android:launchMode="singleTask"
+            android:taskAffinity=".bitacora"
+            android:theme="@style/Theme.Rachas.Launcher">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <receiver
+            android:name=".ValQWidget"
+            android:exported="false"
+            android:label="@string/widget_valq">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_valq_info" />
+        </receiver>
+
+        <receiver
+            android:name=".BitacoraWidget"
+            android:exported="false"
+            android:label="@string/widget_bitacora">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_bitacora_info" />
+        </receiver>
+    </application>
+</manifest>
