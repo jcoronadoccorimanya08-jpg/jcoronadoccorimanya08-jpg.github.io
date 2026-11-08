@@ -64,9 +64,7 @@ abstract class TwaLauncherActivity : Activity() {
                 s.validateRelationship(CustomTabsService.RELATION_USE_AS_ORIGIN, ORIGIN, null)
                 if (!launched) {
                     launched = true
-                    TrustedWebActivityIntentBuilder(Uri.parse(ORIGIN.toString() + path))
-                        .build(s)
-                        .launchTrustedWebActivity(this@TwaLauncherActivity)
+                    launchTwa(s, intent)
                 }
             }
 
@@ -76,6 +74,23 @@ abstract class TwaLauncherActivity : Activity() {
         }
         connection = conn
         if (!CustomTabsClient.bindCustomTabsService(this, provider, conn)) openInBrowser()
+    }
+
+    private fun startUrl(intent: Intent?): Uri {
+        val urge = intent?.getBooleanExtra(EXTRA_URGE, false) == true
+        return Uri.parse(ORIGIN.toString() + path + if (urge) "?urgencia=1" else "")
+    }
+
+    private fun launchTwa(s: CustomTabsSession, intent: Intent?) {
+        TrustedWebActivityIntentBuilder(startUrl(intent)).build(s).launchTrustedWebActivity(this)
+    }
+
+    /** Si ya estaba abierta (por ejemplo, tocas «Tengo un antojo» en el widget), abre la dirección nueva. */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val s = session
+        if (s != null) launchTwa(s, intent) else startActivity(Intent(Intent.ACTION_VIEW, startUrl(intent)))
     }
 
     /** Al volver desde la app web, esta pantalla invisible se cierra. */
@@ -97,12 +112,13 @@ abstract class TwaLauncherActivity : Activity() {
     }
 
     private fun openInBrowser() {
-        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(ORIGIN.toString() + path)))
+        startActivity(Intent(Intent.ACTION_VIEW, startUrl(intent)))
         finish()
     }
 
     companion object {
         val ORIGIN: Uri = Uri.parse("https://jcoronadoccorimanya08-jpg.github.io")
+        const val EXTRA_URGE = "urgencia"
         private val CHROME_PACKAGES = listOf("com.android.chrome", "com.chrome.beta", "com.chrome.dev", "com.chrome.canary")
     }
 }
