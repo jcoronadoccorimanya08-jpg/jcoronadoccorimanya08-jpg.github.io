@@ -67,7 +67,7 @@ class WidgetPreviewTest {
         val todayPct = if (dayNumber >= 1) pcts.last() else 0
         val week = JSONObject().put("n", (dayNumber - 1) / 7 + 1).put("start", weekStart.toString()).put("len", 7)
             .put("won", if (dayNumber >= 1) pcts.takeLast((today.toEpochDay() - weekStart.toEpochDay() + 1).toInt()).count { it >= 65 } else 0).put("goal", 6)
-        val names = listOf("Dormir", "Rutina", "Gym", "Bloque")
+        val names = listOf("Dormir", "Rutina", "Gym", "Bloque", "Lectura").take(coreDone.size)
         val core = JSONArray()
         names.forEachIndexed { i, n -> core.put(JSONObject().put("n", n).put("done", coreDone[i]).put("counts", true)) }
         return JSONObject()
@@ -143,6 +143,11 @@ class WidgetPreviewTest {
             "valq-3-semana-ganada",
             payload("valq", valqFrame(LocalDate.parse("2026-11-28"), 14, valqPcts.drop(2) + listOf(78, 81), listOf(true, true, true, true), 0, 0, "¡Gran racha! Día ganado", badges = 1), accent = "violeta"),
             at("2026-11-28T20:10:00"),
+        ),
+        Triple(
+            "valq-8-nucleo-de-5",
+            payload("valq", valqFrame(thu, 12, valqPcts, listOf(true, true, true, false, true), 0, 2, "¡Gran racha! Día ganado", badges = 1)),
+            at("2026-11-26T18:40:00"),
         ),
         Triple("valq-4-sin-datos", null, at("2026-11-08T14:00:00")),
         Triple(

@@ -243,18 +243,33 @@ object Chart {
 
     /**
      * El núcleo de hoy en una fila: cada hábito con su marca y su nombre completo, repartidos a lo ancho.
-     * Solo si no entran, los nombres se cortan.
+     * Si no entran (por ejemplo, con 5 hábitos), la letra se achica un poco; solo si aun así no entran, se cortan.
      */
     private fun drawCore(c: Canvas, core: List<Core>, left: Float, right: Float, cy: Float, active: Boolean, p: Palette, d: Float) {
         val n = core.size
-        val r = 6f * d
-        val gap = 3.5f * d
-        val label = paint(p.muted).apply { textSize = 10f * d; typeface = MEDIUM }
-        val widths = core.map { 2 * r + gap + label.measureText(it.name) }
+        if (n == 0) return
         val avail = right - left
-        val total = widths.sum()
-        val fits = total <= avail
-        val space = if (fits && n > 1) min((avail - total) / (n - 1), 22 * d) else 0f
+        val label = paint(p.muted).apply { typeface = MEDIUM }
+        // Tamaños de letra, marca y separación, de más cómodo a más compacto.
+        val sizes = listOf(Triple(10f, 6f, 3.5f), Triple(9.5f, 5.6f, 3f), Triple(9f, 5.2f, 2.8f), Triple(8.5f, 5f, 2.5f))
+        var chosen = sizes.last()
+        var widths = emptyList<Float>()
+        var fits = false
+        for (sz in sizes) {
+            label.textSize = sz.first * d
+            val r = sz.second * d
+            val gap = sz.third * d
+            widths = core.map { 2 * r + gap + label.measureText(it.name) }
+            chosen = sz
+            if (widths.sum() + (n - 1) * 4f * d <= avail) {
+                fits = true
+                break
+            }
+        }
+        label.textSize = chosen.first * d
+        val r = chosen.second * d
+        val gap = chosen.third * d
+        val space = if (fits && n > 1) min((avail - widths.sum()) / (n - 1), 22 * d) else 0f
         val slot = avail / n
         var x0 = left
         core.forEachIndexed { i, item ->
@@ -262,8 +277,8 @@ object Chart {
             val done = active && item.done
             drawMark(c, start + r, cy, r, d, if (done) 2 else if (item.counts) 1 else 0, p)
             label.color = if (!item.counts) p.faint else if (done) p.text else p.muted
-            val text = if (fits) item.name else fit(item.name, label, slot - 2 * r - gap - 4 * d)
-            c.drawText(text, start + 2 * r + gap, cy + 3.5f * d, label)
+            val text = if (fits) item.name else fit(item.name, label, slot - 2 * r - gap - 3 * d)
+            c.drawText(text, start + 2 * r + gap, cy + label.textSize * 0.35f, label)
             x0 += widths[i] + space
         }
     }
