@@ -28,6 +28,14 @@ data class Palette(
     val track: Int,
     /** Fondo del widget (para separar los puntos de la línea). */
     val bg: Int,
+    /** Caída de hoy en un hábito. */
+    val fail: Int = 0xFFEE6F5B.toInt(),
+    /** Color de cada hábito de Bitácora, el mismo de la app (tokens --h1 … --h6 del tema oscuro). */
+    val habits: IntArray = HABIT_COLORS,
+)
+
+private val HABIT_COLORS = intArrayOf(
+    0xFF5AB6FF.toInt(), 0xFFFFB547.toInt(), 0xFFB69CFF.toInt(), 0xFFFF8AC4.toInt(), 0xFFB8E65A.toInt(), 0xFF4FD1C5.toInt(),
 )
 
 object Palettes {

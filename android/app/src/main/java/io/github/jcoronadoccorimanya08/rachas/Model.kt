@@ -19,6 +19,9 @@ data class Week(val n: Int, val start: LocalDate, val len: Int, val won: Int, va
 
 data class Prize(val name: String, val daysLeft: Int)
 
+/** Un hábito de Bitácora, sin nombre: días seguidos en «ok», % de días limpios y cómo va hoy (0 sin marcar, 1 ok, 2 caída). */
+data class HabitLine(val streak: Int, val pct: Int, val today: Int)
+
 /** Lo que muestra el widget en un día (lo calcula la app web; aquí solo se lee). */
 data class Frame(
     val today: LocalDate,
@@ -46,6 +49,8 @@ data class Frame(
     val nextStep: Int?,
     val nextKind: String?,
     val step: Int,
+    /** Bitácora: cada hábito en el orden de la app (vacío si la app web es antigua). */
+    val habits: List<HabitLine> = emptyList(),
 ) {
     val cycleEnd: LocalDate? get() = start?.plusDays((cycleLength - 1).toLong())
 }
@@ -119,6 +124,13 @@ object Model {
             }
         }
         val prize = o.optJSONObject("prize")?.let { Prize(it.optString("name"), it.optInt("daysLeft")) }
+        val habits = ArrayList<HabitLine>()
+        o.optJSONArray("habits")?.let { arr ->
+            for (i in 0 until arr.length()) {
+                val h = arr.optJSONObject(i) ?: continue
+                habits.add(HabitLine(h.optInt("s").coerceAtLeast(0), h.optInt("p").coerceIn(0, 100), h.optInt("t").coerceIn(0, 2)))
+            }
+        }
         return Frame(
             today = today,
             dayNumber = o.optInt("dayNumber"),
@@ -142,6 +154,7 @@ object Model {
             nextStep = if (o.isNull("nextStep") || !o.has("nextStep")) null else o.optInt("nextStep"),
             nextKind = o.optString("nextKind").takeIf { it.isNotBlank() && it != "null" },
             step = o.optInt("step", 7).coerceAtLeast(1),
+            habits = habits,
         )
     }
 

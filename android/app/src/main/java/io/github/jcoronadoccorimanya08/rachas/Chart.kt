@@ -26,6 +26,7 @@ import kotlin.math.sin
 object Chart {
     private val INITIALS = arrayOf("L", "M", "M", "J", "V", "S", "D")
     private const val MAX_PIXELS = 1_500_000f
+    private const val MAX_HABITS = 6
     private val BOLD: Typeface = Typeface.DEFAULT_BOLD
     private val MEDIUM: Typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
 
@@ -121,8 +122,53 @@ object Chart {
     fun drawBitacora(context: Context, shown: Shown, wDp: Float, hDp: Float, p: Palette, today: LocalDate): Bitmap {
         val (bmp, d) = bitmap(context, wDp, hDp)
         val c = Canvas(bmp)
-        drawWeek(c, columns(if (shown.mode == Mode.STALE) null else shown.frame, today), d, bmp.width - d, 2 * d, bmp.height - d, null, p, d)
+        val w = bmp.width.toFloat()
+        val h = bmp.height.toFloat()
+        val habits = shown.frame?.habits.orEmpty().take(MAX_HABITS)
+        val withHabits = habits.isNotEmpty() && (shown.mode == Mode.ACTIVE || shown.mode == Mode.FINISHED)
+        // Con hábitos: la semana a la izquierda y cada hábito a la derecha (por color y orden, sin nombres).
+        val weekRight = if (withHabits) w * 0.56f else w - d
+        drawWeek(c, columns(if (shown.mode == Mode.STALE) null else shown.frame, today), d, weekRight, 2 * d, h - d, null, p, d)
+        if (withHabits) drawHabits(c, habits, w * 0.61f, w - d, 2 * d, h - d, p, d)
         return bmp
+    }
+
+    /**
+     * Cada hábito en una fila: el punto de su color (lleno si hoy está en «ok», rojo si hoy cayó, vacío si falta),
+     * una barra con su % de días limpios y sus días seguidos a la derecha.
+     */
+    private fun drawHabits(c: Canvas, habits: List<HabitLine>, left: Float, right: Float, top: Float, bottom: Float, p: Palette, d: Float) {
+        val n = habits.size
+        val rowH = min((bottom - top) / n, 17f * d)
+        val y0 = top + ((bottom - top) - rowH * n) / 2f
+        val r = min(4.2f * d, rowH * 0.3f)
+        val num = paint(p.text).apply { textSize = min(11f * d, rowH * 0.72f); typeface = BOLD; textAlign = Paint.Align.RIGHT }
+        val unit = paint(p.muted).apply { textSize = min(8.5f * d, rowH * 0.55f); typeface = MEDIUM; textAlign = Paint.Align.RIGHT }
+        val numW = num.measureText("88") + unit.measureText("d") + 2 * d
+        val barLeft = left + 2 * r + 6 * d
+        val barRight = right - numW - 6 * d
+        val barH = min(5f * d, rowH * 0.32f)
+        habits.forEachIndexed { i, hb ->
+            val cy = y0 + rowH * i + rowH / 2f
+            val color = p.habits[i % p.habits.size]
+            val cx = left + r
+            when (hb.today) {
+                1 -> c.drawCircle(cx, cy, r, paint(color))
+                2 -> c.drawCircle(cx, cy, r, paint(p.fail))
+                else -> c.drawCircle(cx, cy, r - 0.7f * d, paint(color).apply { style = Paint.Style.STROKE; strokeWidth = 1.4f * d })
+            }
+            if (barRight > barLeft + 8 * d) {
+                val track = RectF(barLeft, cy - barH / 2f, barRight, cy + barH / 2f)
+                c.drawRoundRect(track, barH / 2f, barH / 2f, paint(p.track))
+                if (hb.pct > 0) {
+                    val fill = RectF(barLeft, track.top, barLeft + (barRight - barLeft) * hb.pct / 100f, track.bottom)
+                    c.drawRoundRect(fill, barH / 2f, barH / 2f, paint(color))
+                }
+            }
+            val unitX = right
+            c.drawText("d", unitX, cy + num.textSize * 0.36f, unit)
+            c.drawText("${hb.streak}", unitX - unit.measureText("d") - 1.5f * d, cy + num.textSize * 0.36f, num)
+        }
     }
 
     // ---------------------------------------------------------------- Piezas

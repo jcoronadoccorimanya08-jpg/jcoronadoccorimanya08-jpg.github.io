@@ -95,7 +95,10 @@ class WidgetPreviewTest {
         return o.toString()
     }
 
-    private fun bitacoraFrame(today: LocalDate, streak: Int, pcts: List<Int>, done: Boolean, next: Int?, badges: Int = 0): JSONObject {
+    /** Cinco hábitos de ejemplo: días seguidos, % limpio y cómo van hoy (0 sin marcar, 1 ok, 2 caída). */
+    private val sampleHabits = listOf(Triple(9, 100, 1), Triple(9, 100, 1), Triple(2, 79, 1), Triple(9, 93, 0), Triple(5, 86, 1))
+
+    private fun bitacoraFrame(today: LocalDate, streak: Int, pcts: List<Int>, done: Boolean, next: Int?, badges: Int = 0, habits: List<Triple<Int, Int, Int>> = sampleHabits): JSONObject {
         val dayNumber = (today.toEpochDay() - start.toEpochDay() + 1).toInt()
         val weekStart = start.plusDays(((dayNumber - 1) / 7 * 7).toLong())
         val todayPct = if (dayNumber >= 1) pcts.last() else 0
@@ -119,6 +122,7 @@ class WidgetPreviewTest {
             .put("nextKind", "premio")
             .put("step", 7)
             .put("badges", badges)
+            .put("habits", JSONArray(if (dayNumber >= 1) habits.map { (st, pc, t) -> JSONObject().put("s", st).put("p", pc).put("t", t) } else emptyList()))
     }
 
     private val thu = LocalDate.parse("2026-11-26")
@@ -160,7 +164,7 @@ class WidgetPreviewTest {
 
     private fun bitacoraScenarios(): List<Triple<String, String?, ZonedDateTime>> = listOf(
         Triple("bitacora-1-dia-limpio", payload("bitacora", bitacoraFrame(thu, 9, listOf(100, 100, 50, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100), true, 5)), at("2026-11-26T18:40:00")),
-        Triple("bitacora-2-noche-falta", payload("bitacora", bitacoraFrame(thu, 8, listOf(100, 100, 50, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 50), false, 6)), at("2026-11-26T21:40:00")),
+        Triple("bitacora-2-noche-falta", payload("bitacora", bitacoraFrame(thu, 8, listOf(100, 100, 50, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 50), false, 6, habits = listOf(Triple(8, 100, 1), Triple(0, 86, 2), Triple(3, 79, 0), Triple(8, 93, 0), Triple(5, 86, 1)))), at("2026-11-26T21:40:00")),
         Triple("bitacora-3-sin-datos", null, at("2026-11-08T14:00:00")),
         Triple("bitacora-4-antes-del-ciclo", payload("bitacora", bitacoraFrame(LocalDate.parse("2026-11-08"), 0, emptyList(), false, 7)), at("2026-11-08T14:00:00")),
         Triple("bitacora-5-insignia", payload("bitacora", bitacoraFrame(LocalDate.parse("2026-11-24"), 15, List(14) { if (it == 4) 50 else 100 }, true, 6, badges = 2), accent = "lima"), at("2026-11-24T12:00:00")),
@@ -251,6 +255,7 @@ class WidgetPreviewTest {
         val bt = fixture("payload_bitacora.json")
         assertTrue(WidgetStore.save(ctx, "bitacora", bt))
         assertEquals(1, Model.pick(WidgetStore.load(ctx, "bitacora"), LocalDate.parse("2026-11-10")).frame?.streak)
+        assertEquals(listOf(HabitLine(2, 100, 1), HabitLine(1, 100, 0)), Model.pick(WidgetStore.load(ctx, "bitacora"), LocalDate.parse("2026-11-10")).frame?.habits)
         assertFalse(WidgetStore.save(ctx, "valq", "no es un resumen"))
         val now = at("2026-11-10T08:00:00")
         save(onWallpaper(listOf(widgetBitmap("bitacora", now), widgetBitmap("valq", now))), File(out, "real-dia-2.png"))

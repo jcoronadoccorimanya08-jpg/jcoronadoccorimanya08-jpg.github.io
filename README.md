@@ -4,6 +4,7 @@ Raíz del sitio donde viven **Val Q** (`/val-quirurgico/`) y **Bitácora** (`/Bi
 
 - `.well-known/assetlinks.json`: verificación (Digital Asset Links) de la app de Android «Rachas», para que abra las dos apps a pantalla completa y pueda recibir su resumen para los widgets.
 - `android/`: código de «Rachas», una app de Android que abre Val Q y Bitácora con Chrome (Trusted Web Activity) y pone widgets 4×2 con la racha, el día de hoy y la semana (una montaña por día). Las apps web le mandan solo lo que muestra el widget (Bitácora, **solo números**); los datos siguen cifrados en Chrome.
+  - El de Bitácora muestra, sin nombres, cada hábito por color y orden: % de días limpios, días seguidos y cómo va hoy.
   - Los widgets cambian de día solos a medianoche (la app web manda también mañana y pasado mañana) y desde las 21:00 muestran un borde si falta marcar.
   - A las 22:30 llega un recordatorio para anotar el día (si ya anotaste todo, no aparece). Sin internet: alarmas y notificaciones locales.
 
