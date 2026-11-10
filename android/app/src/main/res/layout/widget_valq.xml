@@ -105,7 +105,7 @@
                 android:ellipsize="end"
                 android:gravity="center_vertical"
                 android:maxLines="1"
-                android:text="Abre Val Q desde el ícono de Rachas"
+                android:text="Toca aquí y desbloquea Val Q"
                 android:textColor="#FFA0ABBB"
                 android:textSize="12sp" />
 

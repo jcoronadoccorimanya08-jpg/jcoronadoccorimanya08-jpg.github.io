@@ -11,6 +11,7 @@ import android.widget.FrameLayout
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -232,6 +233,34 @@ class WidgetPreviewTest {
     }
 
     // ------------------------------------------------------------ Reglas
+
+    private fun fixture(name: String): String = requireNotNull(javaClass.classLoader?.getResource(name)) { name }.readText()
+
+    /** Resúmenes reales generados por buildWidgetPayload de cada app web (datos de ejemplo). */
+    @Test
+    fun entiendeElResumenRealDeLasApps() {
+        val vq = fixture("payload_valq.json")
+        assertTrue(WidgetStore.save(ctx, "valq", vq))
+        assertFalse("el resumen de Val Q no se guarda como Bitácora", WidgetStore.save(ctx, "bitacora", vq))
+        val p = WidgetStore.load(ctx, "valq")
+        assertEquals(Mode.ACTIVE, Model.pick(p, LocalDate.parse("2026-11-10")).mode)
+        assertEquals(2, Model.pick(p, LocalDate.parse("2026-11-10")).frame?.dayNumber)
+        assertEquals(listOf("Dormir", "Rutina", "Gym", "Bloque"), Model.pick(p, LocalDate.parse("2026-11-10")).frame?.core?.map { it.name })
+        assertEquals(3, Model.pick(p, LocalDate.parse("2026-11-11")).frame?.dayNumber)
+        assertEquals(Mode.STALE, Model.pick(p, LocalDate.parse("2026-11-13")).mode)
+        val bt = fixture("payload_bitacora.json")
+        assertTrue(WidgetStore.save(ctx, "bitacora", bt))
+        assertEquals(1, Model.pick(WidgetStore.load(ctx, "bitacora"), LocalDate.parse("2026-11-10")).frame?.streak)
+        assertFalse(WidgetStore.save(ctx, "valq", "no es un resumen"))
+        val now = at("2026-11-10T08:00:00")
+        save(onWallpaper(listOf(widgetBitmap("bitacora", now), widgetBitmap("valq", now))), File(out, "real-dia-2.png"))
+        // Sin datos y con el último paso de la conexión.
+        store("valq", null)
+        store("bitacora", null)
+        Diag.mark(ctx, "valq", Diag.READY)
+        save(onWallpaper(listOf(widgetBitmap("bitacora", now), widgetBitmap("valq", now))), File(out, "vacio-con-diagnostico.png"))
+    }
+
 
     @Test
     fun eligeElDiaCorrecto() {

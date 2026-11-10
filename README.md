@@ -28,3 +28,6 @@ Si cambia la llave, actualiza la huella SHA-256 en `.well-known/assetlinks.json`
 1. La actividad de lanzamiento hace `warmup()`, abre una sesión y valida `use_as_origin` contra `assetlinks.json`.
 2. Cuando la página terminó de cargar, pide el canal (`requestPostMessageChannel`). Chrome entra por `PostMessageService` (declarado en el manifiesto: sin él no llega nada).
 3. La página recibe el puerto con origen `android-app://<sitio>/<paquete>`, manda el resumen y la app responde `rachas:ok`. En Ajustes de cada app se ve «Widget conectado ✓».
+4. Si algo falla, el widget vacío muestra el último paso (`Diag.kt`): «Sin abrir desde Rachas», «Conectando…», «Conectada, sin datos», etc. Si la app web se abre sin pasar por Rachas (por ejemplo, con el ícono que instaló Chrome), avisa en Hoy.
+
+Los íconos de Rachas llevan una llamita para no confundirlos con los que instala Chrome (que se llaman igual pero no hablan con el widget).

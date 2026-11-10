@@ -128,7 +128,7 @@
                 android:ellipsize="end"
                 android:gravity="end"
                 android:maxLines="1"
-                android:text="Abre Bitácora desde Rachas"
+                android:text="Toca y desbloquea Bitácora"
                 android:textColor="#FF94A49F"
                 android:textSize="12sp" />
         </LinearLayout>

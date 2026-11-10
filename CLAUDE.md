@@ -6,4 +6,5 @@
 - La app Android solo guarda lo que le mandan las apps web por postMessage: lo que muestra el widget (en Bitácora, **solo números**; ver `src/lib/widget.ts` en cada app). No agregues permisos de internet propios ni analítica.
 - Permisos permitidos, todos locales: notificaciones, alarmas exactas y arranque del teléfono, solo para el recordatorio de las 22:30. La notificación no muestra nombres de hábitos y en la pantalla de bloqueo solo dice «Hora de anotar tu día».
 - `PostMessageService` tiene que estar en el manifiesto: sin él, Chrome no entrega los mensajes de la página y los widgets se quedan sin datos.
+- Pide el canal solo después de `NAVIGATION_FINISHED` (si se pide antes, Chrome puede entregar el puerto a una página que todavía no escucha y se pierde). El rastro de pasos está en `Diag.kt` y se ve en el widget vacío.
 - Antes de entregar un APK: `gradle :app:testDebugUnitTest` (reglas y dibujo de los widgets) y revisar las imágenes que genera.

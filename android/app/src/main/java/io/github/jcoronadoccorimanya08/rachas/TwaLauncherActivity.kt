@@ -59,6 +59,7 @@ abstract class TwaLauncherActivity : Activity() {
                 }
                 NAVIGATION_FINISHED -> {
                     pageLoaded = true
+                    Diag.mark(applicationContext, appKey, Diag.PAGE)
                     requestChannel()
                 }
             }
@@ -67,18 +68,25 @@ abstract class TwaLauncherActivity : Activity() {
         override fun onRelationshipValidationResult(relation: Int, requestedOrigin: Uri, result: Boolean, extras: Bundle?) {
             // Solo si el sitio confirma (assetlinks.json) que esta app puede hablar en su nombre.
             validated = result
+            Diag.mark(applicationContext, appKey, if (result) Diag.VALIDATED else Diag.NOT_VALIDATED)
             requestChannel()
         }
 
         override fun onMessageChannelReady(extras: Bundle?) {
             channelReady = true
+            Diag.mark(applicationContext, appKey, Diag.READY)
             // Le avisa a la página que la app está lista para recibir.
             session?.postMessage(MSG_HELLO, null)
         }
 
         override fun onPostMessage(message: String, extras: Bundle?) {
             // Confirma a la página que el widget quedó actualizado.
-            if (WidgetStore.save(applicationContext, appKey, message)) session?.postMessage(MSG_SAVED, null)
+            if (WidgetStore.save(applicationContext, appKey, message)) {
+                Diag.mark(applicationContext, appKey, Diag.SAVED)
+                session?.postMessage(MSG_SAVED, null)
+            } else if (message.startsWith("{")) {
+                Diag.mark(applicationContext, appKey, Diag.BAD_DATA)
+            }
         }
     }
 
@@ -86,10 +94,12 @@ abstract class TwaLauncherActivity : Activity() {
         val s = session ?: return
         if (!validated || !pageLoaded || channelRequested || channelReady) return
         channelRequested = s.requestPostMessageChannel(ORIGIN, ORIGIN, Bundle())
+        Diag.mark(applicationContext, appKey, if (channelRequested) Diag.REQUESTED else Diag.REJECTED)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Diag.mark(applicationContext, appKey, Diag.OPENED)
         Ticker.scheduleAll(applicationContext)
         if (shouldAskNotifications()) {
             // Una sola vez: el permiso para el recordatorio de las 22:30. La app web se abre después de responder.
@@ -99,6 +109,7 @@ abstract class TwaLauncherActivity : Activity() {
         }
         val provider = CustomTabsClient.getPackageName(this, CHROME_PACKAGES, true)
         if (provider == null) {
+            Diag.mark(applicationContext, appKey, Diag.NO_CHROME)
             openInBrowser()
             return
         }

@@ -109,17 +109,20 @@ object WidgetRenderer {
         views.setTextColor(R.id.streak, p.text)
         chip(views, shown)
 
+        // Sin datos todavía: el último paso de la conexión, para saber dónde se quedó.
+        val diag = if (shown.mode == Mode.EMPTY || shown.mode == Mode.STALE) Diag.text(context, appKey) else null
         val chartW = (widthDp - 28).coerceAtLeast(160).toFloat()
         val chartH = (heightDp - if (valq) 80 else 104).coerceAtLeast(44).toFloat()
         if (valq) {
-            views.setTextViewText(R.id.phrase, valqPhrase(shown, evening))
-            views.setTextColor(R.id.phrase, p.accent)
+            // Sin datos, la frase muestra el último paso de la conexión (en gris).
+            views.setTextViewText(R.id.phrase, diag ?: valqPhrase(shown, evening))
+            views.setTextColor(R.id.phrase, if (diag != null) p.muted else p.accent)
             views.setImageViewBitmap(R.id.chart, Chart.drawValQ(context, shown, chartW, chartH, p, today))
             valqFooter(views, shown, p)
         } else {
             views.setTextViewText(R.id.savings, savingsLine(shown))
             views.setTextColor(R.id.savings, p.accent)
-            views.setTextViewText(R.id.day, dayLine(shown))
+            views.setTextViewText(R.id.day, diag ?: dayLine(shown))
             views.setTextColor(R.id.day, p.muted)
             views.setImageViewBitmap(R.id.chart, Chart.drawBitacora(context, shown, chartW, chartH, p, today))
             val (line, strong) = bitacoraLine(shown, evening)
@@ -188,8 +191,8 @@ object WidgetRenderer {
         val f = shown.frame
         val prize = f?.prize
         val line = when {
-            shown.mode == Mode.EMPTY -> "Abre Val Q desde el ícono de Rachas"
-            shown.mode == Mode.STALE -> "Abre Val Q para ver tu día de hoy"
+            shown.mode == Mode.EMPTY -> "Toca aquí y desbloquea Val Q"
+            shown.mode == Mode.STALE -> "Toca aquí para ponerte al día"
             prize != null -> "${prize.name} · ${left(prize.daysLeft)}"
             else -> "Un día ganado a la vez"
         }
@@ -236,8 +239,8 @@ object WidgetRenderer {
     private fun bitacoraLine(shown: Shown, evening: Boolean): Pair<String, Boolean> {
         val f = shown.frame
         return when (shown.mode) {
-            Mode.EMPTY -> "Abre Bitácora desde Rachas" to false
-            Mode.STALE -> "Abre Bitácora para ponerte al día" to false
+            Mode.EMPTY -> "Toca y desbloquea Bitácora" to false
+            Mode.STALE -> "Toca para ponerte al día" to false
             Mode.BEFORE -> (f?.start?.let { "Arranca el ${Texts.date(it)}" } ?: "Tu ciclo está por empezar") to false
             Mode.FINISHED -> "¡Ciclo completo!" to true
             Mode.ACTIVE -> when {
