@@ -1,0 +1,9 @@
+[
+ {"id":"l1","text":"Todos empezamos el lunes.","voice":"em_alex","speed":0.95,"lang":"es"},
+ {"id":"l2","text":"Y para el jueves, ya se nos olvidó.","voice":"em_alex","speed":0.97,"lang":"es"},
+ {"id":"l3","text":"Rachas convierte cada día en una llama.","voice":"em_alex","speed":0.95,"lang":"es"},
+ {"id":"l4","text":"Marca tu día, y mira crecer tu racha.","voice":"em_alex","speed":0.97,"lang":"es"},
+ {"id":"l5","text":"Directo en tu pantalla de inicio.","voice":"em_alex","speed":0.97,"lang":"es"},
+ {"id":"l6","text":"Y a las diez y media, te recuerda no romperla.","voice":"em_alex","speed":0.97,"lang":"es"},
+ {"id":"l7","text":"Rachas. Un día a la vez.","voice":"em_alex","speed":0.9,"lang":"es"}
+]

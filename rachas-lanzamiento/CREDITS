@@ -1,0 +1,10 @@
+Rachas — «Un día a la vez» (anuncio de lanzamiento, 25 s)
+
+Voz: Kokoro v1.0 (voz em_alex), modelo TTS, licencia Apache 2.0 — https://github.com/thewh1teagle/kokoro-onnx
+     La narración es una voz sintética (generada por computadora).
+Música y efectos: compuestos para este anuncio y sintetizados en código (marimba, vibráfono y glockenspiel por síntesis
+                  modal, colchón y pulsos senoidales, vidrio, clics, apagado). No usa muestras de terceros.
+Tipografías (SIL Open Font License 1.1, Google Fonts): Inter y Inter Tight (Rasmus Andersson), JetBrains Mono (JetBrains).
+Imagen: dibujada en código; motor de estilo adaptado de la librería Lemo-Opuscar (licencia MIT).
+La interfaz y el teléfono son genéricos: no reproducen ningún sistema operativo ni marca real.
+Herramientas: Node.js, Chromium (Playwright), FFmpeg.
