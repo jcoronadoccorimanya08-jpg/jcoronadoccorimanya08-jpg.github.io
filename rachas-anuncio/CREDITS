@@ -1,0 +1,13 @@
+Rachas — «Sube un día a la vez» (anuncio, 25 s)
+
+Voz: Kokoro v1.0 (voz ef_dora), modelo TTS, licencia Apache 2.0 — https://github.com/thewh1teagle/kokoro-onnx
+     La narración es una voz sintética (generada por computadora).
+Música: compuesta para este anuncio y sintetizada en código (kalimba, guitarra de nylon, contrabajo pizzicato y caja de música
+        por modelado físico; colchón sintetizado). No usa muestras de terceros.
+Efectos de sonido: sintetizados en código (pincel, lápiz, llama, grillos, campana, neblina).
+Tipografías (SIL Open Font License 1.1, Google Fonts):
+  Cormorant Garamond — Christian Thalmann
+  Caveat — Impallari Type
+  IBM Plex Mono — IBM
+Imagen: pintada en código (motor de pinceladas de acuarela y textura de papel adaptados de la librería Lemo-Opuscar, licencia MIT).
+Herramientas: Node.js, Chromium (Playwright), FFmpeg.

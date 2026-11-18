@@ -1,0 +1,8 @@
+[
+ {"id":"l1","text":"Un día no cambia nada.","voice":"ef_dora","speed":0.9,"lang":"es"},
+ {"id":"l2","text":"Pero un día, y otro, y otro más...","voice":"ef_dora","speed":0.9,"lang":"es"},
+ {"id":"l3","text":"se vuelven montaña.","voice":"ef_dora","speed":0.88,"lang":"es"},
+ {"id":"l4","text":"Rachas pinta cada día que cumples, en tu pantalla de inicio.","voice":"ef_dora","speed":0.95,"lang":"es"},
+ {"id":"l5","text":"Y a las diez y media, te recuerda anotar tu día.","voice":"ef_dora","speed":0.95,"lang":"es"},
+ {"id":"l6","text":"Rachas. Sube un día a la vez.","voice":"ef_dora","speed":0.88,"lang":"es"}
+]
