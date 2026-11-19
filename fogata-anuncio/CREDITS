@@ -1,0 +1,9 @@
+Fogata — «Mantén vivo tu fuego» (anuncio, 25 s y 15 s)
+
+Voz (borrador): Kokoro v1.0, voz em_alex, licencia Apache 2.0 — https://github.com/thewh1teagle/kokoro-onnx. Voz sintética.
+     Versión final prevista: ElevenLabs (cuenta del usuario; uso según su plan).
+Música y efectos: compuestos para este anuncio y sintetizados en código. Sin muestras de terceros.
+Tipografías (SIL Open Font License 1.1, Google Fonts): Inter, Inter Tight, JetBrains Mono, Barlow Condensed.
+Imagen: dibujada en código; motor de estilo adaptado de la librería Lemo-Opuscar (MIT). Las pantallas de Val Q y Bitácora
+        se redibujaron a partir de su diseño real, con números de ejemplo. Teléfono e íconos genéricos: sin marcas de terceros.
+Herramientas: Node.js, Chromium (Playwright), FFmpeg.

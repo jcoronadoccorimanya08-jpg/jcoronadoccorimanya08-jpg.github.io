@@ -1,0 +1,10 @@
+[
+ {"id":"l1","text":"¿Cuántas veces dijiste: empiezo el lunes?","voice":"em_alex","speed":1.05,"lang":"es"},
+ {"id":"l2","text":"¿Y cuántas veces llegó el jueves, y nada?","voice":"em_alex","speed":1.05,"lang":"es"},
+ {"id":"l3","text":"Esto es Fogata.","voice":"em_alex","speed":0.95,"lang":"es"},
+ {"id":"l4","text":"Tus hábitos viven en dos apps: Val Q y Bitácora.","voice":"em_alex","speed":1.0,"lang":"es"},
+ {"id":"l5","text":"Cada día cumplido sube tu montaña, y alimenta tu racha.","voice":"em_alex","speed":1.0,"lang":"es"},
+ {"id":"l6","text":"Y a las diez y media, te recuerda no apagar tu fuego.","voice":"em_alex","speed":1.0,"lang":"es"},
+ {"id":"l7","text":"Fogata. Mantén vivo tu fuego.","voice":"em_alex","speed":0.95,"lang":"es"},
+ {"id":"l8","text":"Gratis en Android.","voice":"em_alex","speed":0.95,"lang":"es"}
+]
