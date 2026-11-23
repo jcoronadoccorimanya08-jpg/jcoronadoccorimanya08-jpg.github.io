@@ -51,12 +51,24 @@ data class Frame(
     val step: Int,
     /** Bitácora: cada hábito en el orden de la app (vacío si la app web es antigua). */
     val habits: List<HabitLine> = emptyList(),
+    /** BilleFlash: gastado hoy, límite, disponible de la quincena (null en modo discreto). */
+    val spent: Double? = null,
+    val limit: Double? = null,
+    val available: Double? = null,
+    /** BilleFlash: días para la próxima quincena. */
+    val nextIn: Int? = null,
+    /** BilleFlash: gastado / límite en % (va también en modo discreto: no dice montos). */
+    val usePct: Int = 0,
+    /** BilleFlash: lo más urgente, en corto. */
+    val urgent: String? = null,
+    /** BilleFlash: % con el que cerraste hoy (null si todavía no cerraste). */
+    val closedPct: Int? = null,
 ) {
     val cycleEnd: LocalDate? get() = start?.plusDays((cycleLength - 1).toLong())
 }
 
 /** El último resumen que mandó una app: el día de hoy y los días adelantados. */
-data class Payload(val app: String, val accent: String, val test: Boolean, val frames: List<Frame>)
+data class Payload(val app: String, val accent: String, val test: Boolean, val frames: List<Frame>, val discreet: Boolean = false)
 
 enum class Mode {
     /** Todavía no llegó nada de la app. */
@@ -90,7 +102,7 @@ object Model {
             o.optJSONArray("ahead")?.let { arr ->
                 for (i in 0 until arr.length()) arr.optJSONObject(i)?.let { f -> frame(f)?.let { frames.add(it) } }
             }
-            Payload(o.optString("app"), o.optString("accent", "verde"), o.optBoolean("test", false), frames)
+            Payload(o.optString("app"), o.optString("accent", "verde"), o.optBoolean("test", false), frames, o.optBoolean("discreet", false))
         } catch (_: Exception) {
             null
         }
@@ -101,6 +113,10 @@ object Model {
     } catch (_: Exception) {
         null
     }
+
+    private fun dbl(o: JSONObject, k: String): Double? = if (!o.has(k) || o.isNull(k)) null else o.optDouble(k).takeUnless { it.isNaN() }
+
+    private fun int(o: JSONObject, k: String): Int? = if (!o.has(k) || o.isNull(k)) null else o.optInt(k)
 
     private fun frame(o: JSONObject): Frame? {
         val today = date(o.optString("today")) ?: return null
@@ -155,6 +171,13 @@ object Model {
             nextKind = o.optString("nextKind").takeIf { it.isNotBlank() && it != "null" },
             step = o.optInt("step", 7).coerceAtLeast(1),
             habits = habits,
+            spent = dbl(o, "spent"),
+            limit = dbl(o, "limit"),
+            available = dbl(o, "available"),
+            nextIn = int(o, "nextIn"),
+            usePct = o.optInt("usePct").coerceIn(0, 999),
+            urgent = o.optString("urgent").takeIf { it.isNotBlank() && it != "null" && !o.isNull("urgent") }?.take(40),
+            closedPct = int(o, "closedPct")?.coerceIn(0, 100),
         )
     }
 

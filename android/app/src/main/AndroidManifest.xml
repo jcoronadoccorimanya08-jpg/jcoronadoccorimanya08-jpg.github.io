@@ -56,6 +56,20 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".BilleFlashActivity"
+            android:exported="true"
+            android:icon="@mipmap/ic_billeflash"
+            android:label="BilleFlash"
+            android:launchMode="singleTask"
+            android:taskAffinity=".billeflash"
+            android:theme="@style/Theme.Rachas.Launcher">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
         <!-- Chrome se conecta aquí para entregar lo que manda la app web (sin esto, el widget no recibe nada). -->
         <service
             android:name="androidx.browser.customtabs.PostMessageService"
@@ -97,6 +111,18 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_bitacora_info" />
+        </receiver>
+        <receiver
+            android:name=".BilleFlashWidget"
+            android:exported="false"
+            android:label="@string/widget_billeflash">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.appwidget.action.APPWIDGET_OPTIONS_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_billeflash_info" />
         </receiver>
     </application>
 </manifest>

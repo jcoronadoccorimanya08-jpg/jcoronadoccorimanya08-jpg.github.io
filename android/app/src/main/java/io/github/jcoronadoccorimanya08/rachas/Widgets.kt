@@ -70,6 +70,14 @@ object Texts {
     fun hours(h: Double): String =
         if (h == Math.floor(h)) h.toInt().toString() else String.format(java.util.Locale.ROOT, "%.1f", h).replace('.', ',')
 
+    /** 28.0 → «Bs 28»; 46.67 → «Bs 46,7». */
+    fun bs(x: Double): String {
+        val r = Math.round(x * 10) / 10.0
+        val whole = r == Math.floor(r)
+        val n = if (whole) number(r.toInt()) else number(r.toInt()) + "," + Math.abs(Math.round(r * 10) % 10)
+        return "Bs $n"
+    }
+
     fun daysUntil(f: Frame): Int = f.start?.let { ChronoUnit.DAYS.between(f.today, it).toInt() } ?: 1
 }
 
@@ -82,14 +90,24 @@ object WidgetRenderer {
     private val CHIP_TEXT = intArrayOf(0xFFE7AA78.toInt(), 0xFFD9E0E9.toInt(), 0xFFF5C542.toInt(), 0xFFA6F0E9.toInt(), 0xFF96D6FF.toInt(), 0xFFFF9FE9.toInt())
 
     fun open(context: Context, appKey: String, urge: Boolean): PendingIntent {
-        val target = if (appKey == "valq") ValQActivity::class.java else BitacoraActivity::class.java
+        val target = when (appKey) {
+            "valq" -> ValQActivity::class.java
+            "billeflash" -> BilleFlashActivity::class.java
+            else -> BitacoraActivity::class.java
+        }
         val intent = Intent(context, target).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         if (urge) intent.putExtra(TwaLauncherActivity.EXTRA_URGE, true)
-        val code = if (appKey == "valq") 1 else if (urge) 3 else 2
+        val code = when {
+            appKey == "valq" -> 1
+            appKey == "billeflash" -> 4
+            urge -> 3
+            else -> 2
+        }
         return PendingIntent.getActivity(context, code, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
     fun render(context: Context, appKey: String, widthDp: Int, heightDp: Int, now: ZonedDateTime = ZonedDateTime.now(LA_PAZ)): RemoteViews {
+        if (appKey == "billeflash") return renderBilleFlash(context, widthDp, heightDp, now)
         val valq = appKey == "valq"
         val views = RemoteViews(context.packageName, if (valq) R.layout.widget_valq else R.layout.widget_bitacora)
         views.setOnClickPendingIntent(android.R.id.background, open(context, appKey, urge = false))
@@ -138,6 +156,76 @@ object WidgetRenderer {
             views.setTextColor(R.id.line, if (strong) p.accent else p.muted)
         }
         views.setContentDescription(android.R.id.background, describe(shown, valq))
+        return views
+    }
+
+    /** BilleFlash cambia de día a las 4:00 (si anotas de madrugada, todavía es «ayer»). */
+    const val BF_DAY_START = 4
+
+    fun billeFlashDay(now: ZonedDateTime): LocalDate = now.minusHours(BF_DAY_START.toLong()).toLocalDate()
+
+    private fun renderBilleFlash(context: Context, widthDp: Int, heightDp: Int, now: ZonedDateTime): RemoteViews {
+        val key = "billeflash"
+        val views = RemoteViews(context.packageName, R.layout.widget_billeflash)
+        views.setOnClickPendingIntent(android.R.id.background, open(context, key, urge = false))
+        views.setOnClickPendingIntent(R.id.urge, open(context, key, urge = false))
+        val today = billeFlashDay(now)
+        val payload = WidgetStore.load(context, key)?.takeIf { it.app == key }
+        val shown = Model.pick(payload, today)
+        val f = shown.frame
+        val p = Palettes.of(key, payload?.accent ?: "verde")
+        val discreet = payload?.discreet == true
+        val active = shown.mode == Mode.ACTIVE && f != null
+        val closed = active && f!!.closedPct != null
+        // De noche (desde las 21:00 y hasta las 4:00), si todavía no cerraste: borde del color de la app.
+        val evening = active && !closed && (now.hour >= EVENING_HOUR || now.hour < BF_DAY_START)
+        views.setViewVisibility(R.id.glow, if (active && (f!!.streak >= 7 || closed)) View.VISIBLE else View.GONE)
+        views.setInt(R.id.glow, "setColorFilter", p.accent)
+        views.setViewVisibility(R.id.outline, if (evening) View.VISIBLE else View.GONE)
+        views.setInt(R.id.outline, "setColorFilter", p.accent)
+        views.setImageViewResource(R.id.flame, if (active && f!!.streak > 0) R.drawable.ic_flame else R.drawable.ic_flame_off)
+        views.setTextViewText(R.id.streak, if (active) bigNumber(f!!.streak, if (f.streak == 1) "noche" else "noches", p) else "BilleFlash")
+        views.setTextColor(R.id.streak, p.text)
+        views.setViewVisibility(R.id.chip, View.GONE)
+
+        val diag = if (shown.mode == Mode.EMPTY || shown.mode == Mode.STALE) Diag.text(context, key) else null
+        views.setTextViewText(R.id.savings, if (active && !discreet) f!!.available?.let { "Quedan ${Texts.bs(it)}" } ?: "" else "")
+        views.setTextColor(R.id.savings, p.accent)
+        val next = f?.nextIn
+        views.setTextViewText(
+            R.id.day,
+            diag ?: if (!active || next == null) "" else when {
+                next > 1 -> "Quincena en $next d"
+                next == 1 -> "Quincena mañana"
+                next == 0 -> "Quincena hoy"
+                else -> "Quincena atrasada"
+            },
+        )
+        views.setTextColor(R.id.day, p.muted)
+        val chartW = (widthDp - 28).coerceAtLeast(160).toFloat()
+        val chartH = (heightDp - 104).coerceAtLeast(44).toFloat()
+        views.setImageViewBitmap(R.id.chart, Chart.drawBilleFlash(context, shown, chartW, chartH, p, today, discreet))
+        val (line, strong) = when (shown.mode) {
+            Mode.EMPTY -> "Toca y desbloquea BilleFlash" to false
+            Mode.STALE -> "Toca para ponerte al día" to false
+            else -> when {
+                !active -> "" to false
+                f!!.urgent != null -> f.urgent to true
+                evening -> "Cierra tu día antes de dormir" to true
+                closed -> "Día cerrado · ${f.closedPct} %" to false
+                else -> "Anota tus gastos de hoy" to false
+            }
+        }
+        views.setTextViewText(R.id.line, line)
+        views.setTextColor(R.id.line, if (strong) p.accent else p.muted)
+        views.setContentDescription(
+            android.R.id.background,
+            when {
+                !active -> "BilleFlash: abre la app desde Rachas para ver tu día."
+                discreet -> "BilleFlash: racha de ${f!!.streak} noches. Hoy vas ${f.usePct} % de tu límite."
+                else -> "BilleFlash: racha de ${f!!.streak} noches. Hoy gastaste ${f.spent?.let { Texts.bs(it) } ?: "—"} de ${f.limit?.let { Texts.bs(it) } ?: "—"}."
+            },
+        )
         return views
     }
 
@@ -298,6 +386,12 @@ class ValQWidget : RachasWidgetProvider("valq") {
     }
 }
 
+class BilleFlashWidget : RachasWidgetProvider("billeflash") {
+    companion object {
+        fun updateAll(context: Context) = Widgets.updateAll(context, "billeflash")
+    }
+}
+
 class BitacoraWidget : RachasWidgetProvider("bitacora") {
     companion object {
         fun updateAll(context: Context) = Widgets.updateAll(context, "bitacora")
@@ -305,7 +399,17 @@ class BitacoraWidget : RachasWidgetProvider("bitacora") {
 }
 
 object Widgets {
-    private fun provider(appKey: String): Class<*> = if (appKey == "valq") ValQWidget::class.java else BitacoraWidget::class.java
+    private fun provider(appKey: String): Class<*> = when (appKey) {
+        "valq" -> ValQWidget::class.java
+        "billeflash" -> BilleFlashWidget::class.java
+        else -> BitacoraWidget::class.java
+    }
+
+    private fun layout(appKey: String): Int = when (appKey) {
+        "valq" -> R.layout.widget_valq
+        "billeflash" -> R.layout.widget_billeflash
+        else -> R.layout.widget_bitacora
+    }
 
     fun ids(context: Context, appKey: String): IntArray = try {
         AppWidgetManager.getInstance(context)?.getAppWidgetIds(ComponentName(context, provider(appKey))) ?: IntArray(0)
@@ -313,7 +417,7 @@ object Widgets {
         IntArray(0)
     }
 
-    fun hasAny(context: Context) = ids(context, "valq").isNotEmpty() || ids(context, "bitacora").isNotEmpty()
+    fun hasAny(context: Context) = listOf("valq", "bitacora", "billeflash").any { ids(context, it).isNotEmpty() }
 
     /** Tamaño del widget en dp (en vertical: ancho mínimo y alto máximo). */
     private fun sizeDp(manager: AppWidgetManager, id: Int): Pair<Int, Int> {
@@ -329,7 +433,7 @@ object Widgets {
             WidgetRenderer.render(context, appKey, w, h)
         } catch (_: Throwable) {
             // Si algo falla al dibujar, al menos el widget abre la app.
-            RemoteViews(context.packageName, if (appKey == "valq") R.layout.widget_valq else R.layout.widget_bitacora).apply {
+            RemoteViews(context.packageName, layout(appKey)).apply {
                 setOnClickPendingIntent(android.R.id.background, WidgetRenderer.open(context, appKey, urge = false))
             }
         }

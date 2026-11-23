@@ -14,6 +14,7 @@ object WidgetStore {
         when (appKey) {
             "valq" -> ValQWidget.updateAll(context)
             "bitacora" -> BitacoraWidget.updateAll(context)
+            "billeflash" -> BilleFlashWidget.updateAll(context)
         }
         return true
     }

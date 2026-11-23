@@ -117,6 +117,55 @@ object Chart {
         return bmp
     }
 
+    // ---------------------------------------------------------------- BilleFlash
+
+    /**
+     * La semana de tus noches a la izquierda (la montaña: el % con que cerraste cada día) y, a la derecha,
+     * lo gastado hoy contra tu límite con su barra. En modo discreto, solo el porcentaje (sin montos).
+     */
+    fun drawBilleFlash(context: Context, shown: Shown, wDp: Float, hDp: Float, p: Palette, today: LocalDate, discreet: Boolean): Bitmap {
+        val (bmp, d) = bitmap(context, wDp, hDp)
+        val c = Canvas(bmp)
+        val w = bmp.width.toFloat()
+        val h = bmp.height.toFloat()
+        val f = shown.frame
+        val active = shown.mode == Mode.ACTIVE && f != null
+        drawWeek(c, columns(if (shown.mode == Mode.STALE) null else f, today), d, w * 0.56f, 2 * d, h - d, null, p, d)
+
+        val left = w * 0.62f
+        val right = w - d
+        val over = active && f!!.usePct > 100
+        val label = paint(p.muted).apply { textSize = 11.5f * d; typeface = MEDIUM }
+        val big = paint(if (over) p.fail else p.text).apply { textSize = min(26f * d, h * 0.3f); typeface = BOLD }
+        val sub = paint(p.muted).apply { textSize = 11.5f * d; typeface = MEDIUM }
+        val bigText = when {
+            !active -> "—"
+            discreet || f!!.spent == null -> "${f!!.usePct} %"
+            else -> Texts.bs(f.spent)
+        }
+        val subText = when {
+            !active -> ""
+            discreet || f!!.limit == null -> "de tu límite"
+            else -> "de ${Texts.bs(f.limit)}"
+        }
+        val barH = 7 * d
+        val block = label.textSize + 6 * d + big.textSize + 4 * d + sub.textSize + 10 * d + barH
+        var y = (h - block) / 2f + label.textSize
+        c.drawText(fit("Gastado hoy", label, right - left), left, y, label)
+        y += 6 * d + big.textSize
+        c.drawText(fit(bigText, big, right - left), left, y, big)
+        y += 4 * d + sub.textSize
+        c.drawText(fit(subText, sub, right - left), left, y, sub)
+        y += 10 * d
+        val r = barH / 2f
+        c.drawRoundRect(left, y, right, y + barH, r, r, paint(p.track))
+        if (active && f!!.usePct > 0) {
+            val frac = min(1f, f.usePct / 100f)
+            c.drawRoundRect(left, y, left + max(barH, (right - left) * frac), y + barH, r, r, paint(if (over) p.fail else p.accent))
+        }
+        return bmp
+    }
+
     // ---------------------------------------------------------------- Bitácora
 
     fun drawBitacora(context: Context, shown: Shown, wDp: Float, hDp: Float, p: Palette, today: LocalDate): Bitmap {

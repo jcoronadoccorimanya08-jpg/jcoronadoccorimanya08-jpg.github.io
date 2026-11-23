@@ -219,6 +219,11 @@ class ValQActivity : TwaLauncherActivity() {
     override val appKey = "valq"
 }
 
+class BilleFlashActivity : TwaLauncherActivity() {
+    override val path = "/BilleFlash/"
+    override val appKey = "billeflash"
+}
+
 class BitacoraActivity : TwaLauncherActivity() {
     override val path = "/Bitacora/"
     override val appKey = "bitacora"

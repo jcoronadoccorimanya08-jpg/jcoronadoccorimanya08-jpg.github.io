@@ -175,6 +175,25 @@ class WidgetPreviewTest {
         Triple("bitacora-5-insignia", payload("bitacora", bitacoraFrame(LocalDate.parse("2026-11-24"), 15, List(14) { if (it == 4) 50 else 100 }, true, 6, badges = 2), accent = "lima"), at("2026-11-24T12:00:00")),
     )
 
+    /** BilleFlash, con montos inventados. */
+    private fun billeFrame(today: LocalDate, streak: Int, pcts: List<Int>, spent: Double?, limit: Double?, available: Double?, usePct: Int, closed: Int?, urgent: String?, nextIn: Int? = 9): JSONObject =
+        JSONObject().put("today", today.toString()).put("dayNumber", 12).put("streak", streak)
+            .put("closedPct", closed ?: JSONObject.NULL)
+            .put("days", days(today, pcts, 1))
+            .put("spent", spent ?: JSONObject.NULL).put("limit", limit ?: JSONObject.NULL).put("available", available ?: JSONObject.NULL)
+            .put("nextIn", nextIn ?: JSONObject.NULL).put("usePct", usePct).put("urgent", urgent ?: JSONObject.NULL)
+
+    private fun billePayload(frame: JSONObject, discreet: Boolean = false): String =
+        JSONObject(payload("billeflash", frame)).put("discreet", discreet).toString()
+
+    private fun billeScenarios(): List<Triple<String, String?, ZonedDateTime>> = listOf(
+        Triple("billeflash-1-dentro", billePayload(billeFrame(thu, 6, listOf(100, 100, 75, 100, 100, 85, 0), 28.0, 46.7, 520.5, 60, null, "Cobrar a Ana hoy")), at("2026-11-26T18:40:00")),
+        Triple("billeflash-2-pasado-noche", billePayload(billeFrame(thu, 6, listOf(100, 100, 75, 100, 100, 85, 0), 61.0, 46.7, 480.0, 131, null, null)), at("2026-11-26T22:10:00")),
+        Triple("billeflash-3-cerrado", billePayload(billeFrame(thu, 7, listOf(100, 100, 75, 100, 100, 85, 100), 30.0, 46.7, 510.0, 64, 100, null)), at("2026-11-26T23:00:00")),
+        Triple("billeflash-4-discreto", billePayload(billeFrame(thu, 6, listOf(100, 100, 75, 100, 100, 85, 0), null, null, null, 60, null, "Internet atrasado"), discreet = true), at("2026-11-26T18:40:00")),
+        Triple("billeflash-5-sin-datos", null, at("2026-11-26T18:40:00")),
+    )
+
     // ------------------------------------------------------------ Dibujo
 
     private fun store(app: String, json: String?) {
@@ -230,6 +249,10 @@ class WidgetPreviewTest {
             store("bitacora", json)
             all.add(name to widgetBitmap("bitacora", now))
         }
+        for ((name, json, now) in billeScenarios()) {
+            store("billeflash", json)
+            all.add(name to widgetBitmap("billeflash", now))
+        }
         all.forEach { (name, bmp) -> save(onWallpaper(listOf(bmp)), File(out, "$name.png")) }
         // La pantalla de inicio: Bitácora arriba y Val Q abajo, como en tu teléfono.
         save(onWallpaper(listOf(all.first { it.first == "bitacora-1-dia-limpio" }.second, all.first { it.first == "valq-1-dia-ganado" }.second)), File(out, "pantalla.png"))
@@ -238,6 +261,7 @@ class WidgetPreviewTest {
             val res = File(System.getenv("RACHAS_RES_DIR") ?: "src/main/res/drawable-nodpi")
             save(all.first { it.first == "valq-1-dia-ganado" }.second, File(res, "preview_valq.png"))
             save(all.first { it.first == "bitacora-1-dia-limpio" }.second, File(res, "preview_bitacora.png"))
+            save(all.first { it.first == "billeflash-1-dentro" }.second, File(res, "preview_billeflash.png"))
         }
     }
 
@@ -311,8 +335,28 @@ class WidgetPreviewTest {
         assertTrue(m.text.contains("Bitácora: marca tu día."))
         assertEquals("valq", m.app)
         assertEquals("bitacora", Reminder.compose(vqDone, btOpen)!!.app)
+        // BilleFlash: si no cerraste tu día, el aviso dice «y tus gastos» (sin montos).
+        val bfOpen = Model.pick(Model.parse(billePayload(billeFrame(thu, 6, listOf(100, 0), 28.0, 46.7, 520.0, 60, null, null))), thu)
+        val bfClosed = Model.pick(Model.parse(billePayload(billeFrame(thu, 6, listOf(100, 100), 28.0, 46.7, 520.0, 60, 100, null))), thu)
+        val withBf = Reminder.compose(vqDone, btDone, bfOpen)!!
+        assertEquals("Hora de anotar tu día y tus gastos", withBf.title)
+        assertEquals("billeflash", withBf.app)
+        assertFalse(withBf.text, withBf.text.contains("Bs"))
+        assertNull("todo listo, también BilleFlash", Reminder.compose(vqDone, btDone, bfClosed))
         // Sin datos todavía: igual te recuerda.
         assertNotNull(Reminder.compose(Model.pick(null, thu), Model.pick(null, thu)))
+    }
+
+    @Test
+    fun billeFlashCambiaDeDiaALas4() {
+        assertEquals(LocalDate.parse("2026-11-26"), WidgetRenderer.billeFlashDay(at("2026-11-27T02:45:00")))
+        assertEquals(LocalDate.parse("2026-11-27"), WidgetRenderer.billeFlashDay(at("2026-11-27T04:00:00")))
+        val f = Model.parse(billePayload(billeFrame(thu, 6, listOf(100), 28.0, 46.7, 520.5, 60, null, "Cobrar a Ana hoy")))!!.frames.first()
+        assertEquals(28.0, f.spent!!, 0.001)
+        assertEquals("Cobrar a Ana hoy", f.urgent)
+        assertNull(f.closedPct)
+        assertEquals("Bs 46,7", Texts.bs(46.67))
+        assertEquals("Bs 1.250", Texts.bs(1250.0))
     }
 
     @Test

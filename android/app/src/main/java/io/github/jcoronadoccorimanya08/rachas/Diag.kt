@@ -30,7 +30,7 @@ object Diag {
             .apply()
         // Si el widget todavía no tiene datos, que muestre el paso nuevo.
         if (step != SAVED && WidgetStore.load(context, appKey) == null) {
-            if (appKey == "valq") ValQWidget.updateAll(context) else BitacoraWidget.updateAll(context)
+            Widgets.updateAll(context, appKey)
         }
     }
 
