@@ -22,6 +22,9 @@ data class Prize(val name: String, val daysLeft: Int)
 /** Un hábito de Bitácora, sin nombre: días seguidos en «ok», % de días limpios y cómo va hoy (0 sin marcar, 1 ok, 2 caída). */
 data class HabitLine(val streak: Int, val pct: Int, val today: Int)
 
+/** La meta de ahorro principal de BilleFlash. */
+data class GoalLine(val pct: Int, val name: String?, val saved: Double?, val target: Double?)
+
 /** Lo que muestra el widget en un día (lo calcula la app web; aquí solo se lee). */
 data class Frame(
     val today: LocalDate,
@@ -63,6 +66,10 @@ data class Frame(
     val urgent: String? = null,
     /** BilleFlash: % con el que cerraste hoy (null si todavía no cerraste). */
     val closedPct: Int? = null,
+    /** BilleFlash: para antojos te quedan (null en modo discreto o si ya te pasaste). */
+    val antojos: Double? = null,
+    /** BilleFlash: tu meta principal (% siempre; nombre y montos solo sin modo discreto). */
+    val saveGoal: GoalLine? = null,
 ) {
     val cycleEnd: LocalDate? get() = start?.plusDays((cycleLength - 1).toLong())
 }
@@ -178,6 +185,10 @@ object Model {
             usePct = o.optInt("usePct").coerceIn(0, 999),
             urgent = o.optString("urgent").takeIf { it.isNotBlank() && it != "null" && !o.isNull("urgent") }?.take(40),
             closedPct = int(o, "closedPct")?.coerceIn(0, 100),
+            antojos = dbl(o, "antojos"),
+            saveGoal = o.optJSONObject("goal")?.let { g ->
+                GoalLine(g.optInt("pct").coerceIn(0, 100), g.optString("name").takeIf { !g.isNull("name") && it.isNotBlank() }?.take(24), dbl(g, "saved"), dbl(g, "target"))
+            },
         )
     }
 

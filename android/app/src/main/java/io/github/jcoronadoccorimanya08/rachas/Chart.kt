@@ -135,9 +135,7 @@ object Chart {
         val left = w * 0.62f
         val right = w - d
         val over = active && f!!.usePct > 100
-        val label = paint(p.muted).apply { textSize = 11.5f * d; typeface = MEDIUM }
-        val big = paint(if (over) p.fail else p.text).apply { textSize = min(26f * d, h * 0.3f); typeface = BOLD }
-        val sub = paint(p.muted).apply { textSize = 11.5f * d; typeface = MEDIUM }
+        val anto = if (active && !discreet) f!!.antojos else null
         val bigText = when {
             !active -> "—"
             discreet || f!!.spent == null -> "${f!!.usePct} %"
@@ -148,21 +146,29 @@ object Chart {
             discreet || f!!.limit == null -> "de tu límite"
             else -> "de ${Texts.bs(f.limit)}"
         }
-        val barH = 7 * d
-        val block = label.textSize + 6 * d + big.textSize + 4 * d + sub.textSize + 10 * d + barH
-        var y = (h - block) / 2f + label.textSize
+        // Tamaños base; si no entran en el alto del widget, todo se achica por igual (k).
+        val bigBase = min(26f * d, h * 0.3f)
+        fun blockFor(k: Float) = k * (11.5f * d + 6 * d + bigBase + 4 * d + 11.5f * d + 10 * d + 7 * d + if (anto != null) 7 * d + 11.5f * d else 0f)
+        val k = min(1f, (h - 2 * d) / blockFor(1f))
+        val label = paint(p.muted).apply { textSize = 11.5f * d * k; typeface = MEDIUM }
+        val big = paint(if (over) p.fail else p.text).apply { textSize = bigBase * k; typeface = BOLD }
+        val sub = paint(p.muted).apply { textSize = 11.5f * d * k; typeface = MEDIUM }
+        val antoP = paint(p.accent).apply { textSize = 11.5f * d * k; typeface = BOLD }
+        val barH = 7 * d * k
+        var y = (h - blockFor(k)) / 2f + label.textSize
         c.drawText(fit("Gastado hoy", label, right - left), left, y, label)
-        y += 6 * d + big.textSize
+        y += 6 * d * k + big.textSize
         c.drawText(fit(bigText, big, right - left), left, y, big)
-        y += 4 * d + sub.textSize
+        y += 4 * d * k + sub.textSize
         c.drawText(fit(subText, sub, right - left), left, y, sub)
-        y += 10 * d
+        y += 10 * d * k
         val r = barH / 2f
         c.drawRoundRect(left, y, right, y + barH, r, r, paint(p.track))
         if (active && f!!.usePct > 0) {
             val frac = min(1f, f.usePct / 100f)
             c.drawRoundRect(left, y, left + max(barH, (right - left) * frac), y + barH, r, r, paint(if (over) p.fail else p.accent))
         }
+        if (anto != null) c.drawText(fit("Antojos: ${Texts.bs(anto)}", antoP, right - left), left, y + barH + 7 * d * k + antoP.textSize, antoP)
         return bmp
     }
 

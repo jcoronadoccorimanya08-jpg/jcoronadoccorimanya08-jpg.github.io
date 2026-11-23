@@ -212,6 +212,7 @@ object WidgetRenderer {
                 !active -> "" to false
                 f!!.urgent != null -> f.urgent to true
                 evening -> "Cierra tu día antes de dormir" to true
+                f.saveGoal != null -> goalLine(f.saveGoal) to false
                 closed -> "Día cerrado · ${f.closedPct} %" to false
                 else -> "Anota tus gastos de hoy" to false
             }
@@ -227,6 +228,13 @@ object WidgetRenderer {
             },
         )
         return views
+    }
+
+    /** «⭐ Fondo: 30 % · Bs 150 de 500»; en modo discreto, «⭐ Tu meta: 30 %». */
+    fun goalLine(g: GoalLine): String {
+        val name = g.name ?: "Tu meta"
+        val amounts = if (g.saved != null && g.target != null) " · ${Texts.bs(g.saved)} de ${Texts.bs(g.target).removePrefix("Bs ")}" else ""
+        return "⭐ $name: ${g.pct} %$amounts"
     }
 
     private fun headline(shown: Shown, valq: Boolean, p: Palette): CharSequence {

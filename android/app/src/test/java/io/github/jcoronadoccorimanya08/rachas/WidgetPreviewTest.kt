@@ -182,6 +182,8 @@ class WidgetPreviewTest {
             .put("days", days(today, pcts, 1))
             .put("spent", spent ?: JSONObject.NULL).put("limit", limit ?: JSONObject.NULL).put("available", available ?: JSONObject.NULL)
             .put("nextIn", nextIn ?: JSONObject.NULL).put("usePct", usePct).put("urgent", urgent ?: JSONObject.NULL)
+            .put("antojos", if (spent != null && limit != null && spent <= limit) 4.5 else JSONObject.NULL)
+            .put("goal", JSONObject().put("pct", 30).put("name", if (spent == null) JSONObject.NULL else "Fondo").put("saved", if (spent == null) JSONObject.NULL else 150.0).put("target", if (spent == null) JSONObject.NULL else 500.0))
 
     private fun billePayload(frame: JSONObject, discreet: Boolean = false): String =
         JSONObject(payload("billeflash", frame)).put("discreet", discreet).toString()
@@ -357,6 +359,9 @@ class WidgetPreviewTest {
         assertNull(f.closedPct)
         assertEquals("Bs 46,7", Texts.bs(46.67))
         assertEquals("Bs 1.250", Texts.bs(1250.0))
+        assertEquals(4.5, f.antojos!!, 0.001)
+        assertEquals("⭐ Fondo: 30 % · Bs 150 de 500", WidgetRenderer.goalLine(f.saveGoal!!))
+        assertEquals("⭐ Tu meta: 30 %", WidgetRenderer.goalLine(GoalLine(30, null, null, null)))
     }
 
     @Test
