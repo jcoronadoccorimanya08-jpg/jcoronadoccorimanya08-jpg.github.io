@@ -228,10 +228,11 @@ object WidgetRenderer {
 
     // ---------------------------------------------------------------- Bitácora
 
+    /** Sin dinero: solo las horas recuperadas (los Bs ya no se muestran). */
     private fun savingsLine(shown: Shown): String {
         val f = shown.frame ?: return ""
         if (shown.mode != Mode.ACTIVE && shown.mode != Mode.FINISHED) return ""
-        return if (f.horas > 0) "Bs ${Texts.number(f.savedBs)} · ${Texts.hours(f.horas)} h" else "Bs ${Texts.number(f.savedBs)}"
+        return if (f.horas > 0) "${Texts.hours(f.horas)} h recuperadas" else ""
     }
 
     private fun dayLine(shown: Shown): String {
