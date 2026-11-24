@@ -37,7 +37,7 @@ object Ticker {
             else am.cancel(tick)
 
             val reminder = pending(context, ACTION_REMINDER, 21)
-            val at = nextReminder(now).toInstant().toEpochMilli()
+            val at = nextReminder(now, reminderTime(context)).toInstant().toEpochMilli()
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || am.canScheduleExactAlarms()) {
                 am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, reminder)
             } else {
@@ -54,8 +54,12 @@ object Ticker {
         return if (now.isBefore(evening)) evening else now.toLocalDate().plusDays(1).atStartOfDay(LA_PAZ).plusSeconds(30)
     }
 
-    fun nextReminder(now: ZonedDateTime): ZonedDateTime {
-        val t = now.toLocalDate().atTime(REMINDER_TIME).atZone(LA_PAZ)
+    /** La hora que eligió la persona en BilleFlash (Avance → Mi plata); si no, 22:30. */
+    fun reminderTime(context: Context): LocalTime =
+        WidgetStore.load(context, "billeflash")?.remindAt?.let { runCatching { LocalTime.parse(it) }.getOrNull() } ?: REMINDER_TIME
+
+    fun nextReminder(now: ZonedDateTime, time: LocalTime = REMINDER_TIME): ZonedDateTime {
+        val t = now.toLocalDate().atTime(time).atZone(LA_PAZ)
         return if (now.isBefore(t)) t else t.plusDays(1)
     }
 

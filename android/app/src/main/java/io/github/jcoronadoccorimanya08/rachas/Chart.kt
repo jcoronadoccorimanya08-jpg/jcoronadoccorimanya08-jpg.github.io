@@ -130,6 +130,7 @@ object Chart {
         val h = bmp.height.toFloat()
         val f = shown.frame
         val active = shown.mode == Mode.ACTIVE && f != null
+        val cur = shown.payload?.cur ?: "BOB"
         drawWeek(c, columns(if (shown.mode == Mode.STALE) null else f, today), d, w * 0.56f, 2 * d, h - d, null, p, d)
 
         val left = w * 0.62f
@@ -139,12 +140,12 @@ object Chart {
         val bigText = when {
             !active -> "—"
             discreet || f!!.spent == null -> "${f!!.usePct} %"
-            else -> Texts.bs(f.spent)
+            else -> Texts.money(f.spent, cur)
         }
         val subText = when {
             !active -> ""
             discreet || f!!.limit == null -> "de tu límite"
-            else -> "de ${Texts.bs(f.limit)}"
+            else -> "de ${Texts.money(f.limit, cur)}"
         }
         // Tamaños base; si no entran en el alto del widget, todo se achica por igual (k).
         val bigBase = min(26f * d, h * 0.3f)
@@ -168,7 +169,7 @@ object Chart {
             val frac = min(1f, f.usePct / 100f)
             c.drawRoundRect(left, y, left + max(barH, (right - left) * frac), y + barH, r, r, paint(if (over) p.fail else p.accent))
         }
-        if (anto != null) c.drawText(fit("Antojos: ${Texts.bs(anto)}", antoP, right - left), left, y + barH + 7 * d * k + antoP.textSize, antoP)
+        if (anto != null) c.drawText(fit("Antojos: ${Texts.money(anto, cur)}", antoP, right - left), left, y + barH + 7 * d * k + antoP.textSize, antoP)
         return bmp
     }
 

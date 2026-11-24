@@ -75,7 +75,17 @@ data class Frame(
 }
 
 /** El último resumen que mandó una app: el día de hoy y los días adelantados. */
-data class Payload(val app: String, val accent: String, val test: Boolean, val frames: List<Frame>, val discreet: Boolean = false)
+data class Payload(
+    val app: String,
+    val accent: String,
+    val test: Boolean,
+    val frames: List<Frame>,
+    val discreet: Boolean = false,
+    /** BilleFlash: moneda principal («BOB» o «PEN»). */
+    val cur: String = "BOB",
+    /** BilleFlash: hora del aviso de la noche («HH:MM»). */
+    val remindAt: String? = null,
+)
 
 enum class Mode {
     /** Todavía no llegó nada de la app. */
@@ -109,7 +119,7 @@ object Model {
             o.optJSONArray("ahead")?.let { arr ->
                 for (i in 0 until arr.length()) arr.optJSONObject(i)?.let { f -> frame(f)?.let { frames.add(it) } }
             }
-            Payload(o.optString("app"), o.optString("accent", "verde"), o.optBoolean("test", false), frames, o.optBoolean("discreet", false))
+            Payload(o.optString("app"), o.optString("accent", "verde"), o.optBoolean("test", false), frames, o.optBoolean("discreet", false), if (o.optString("cur") == "PEN") "PEN" else "BOB", o.optString("remindAt").takeIf { Regex("^([01]\\d|2[0-3]):[0-5]\\d$").matches(it) })
         } catch (_: Exception) {
             null
         }

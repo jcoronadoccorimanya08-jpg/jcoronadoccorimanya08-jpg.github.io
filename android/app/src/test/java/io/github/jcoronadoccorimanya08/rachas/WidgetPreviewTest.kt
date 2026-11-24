@@ -194,6 +194,7 @@ class WidgetPreviewTest {
         Triple("billeflash-3-cerrado", billePayload(billeFrame(thu, 7, listOf(100, 100, 75, 100, 100, 85, 100), 30.0, 46.7, 510.0, 64, 100, null)), at("2026-11-26T23:00:00")),
         Triple("billeflash-4-discreto", billePayload(billeFrame(thu, 6, listOf(100, 100, 75, 100, 100, 85, 0), null, null, null, 60, null, "Internet atrasado"), discreet = true), at("2026-11-26T18:40:00")),
         Triple("billeflash-5-sin-datos", null, at("2026-11-26T18:40:00")),
+        Triple("billeflash-6-soles-vino", JSONObject(billePayload(billeFrame(thu, 3, listOf(100, 100, 100, 75, 0), 1.5, 3.0, 2.8, 50, null, null))).put("cur", "PEN").put("accent", "vino").toString(), at("2026-11-26T17:00:00")),
     )
 
     // ------------------------------------------------------------ Dibujo
@@ -370,5 +371,9 @@ class WidgetPreviewTest {
         assertEquals(at("2026-11-27T00:00:30"), Ticker.nextTick(at("2026-11-26T21:00:00")))
         assertEquals(at("2026-11-26T22:30:00"), Ticker.nextReminder(at("2026-11-26T18:40:00")))
         assertEquals(at("2026-11-27T22:30:00"), Ticker.nextReminder(at("2026-11-26T22:30:00")))
+        // Cada uno elige su hora (por ejemplo, 22:00).
+        assertEquals(at("2026-11-26T22:00:00"), Ticker.nextReminder(at("2026-11-26T18:40:00"), java.time.LocalTime.of(22, 0)))
+        assertEquals("S/ 2,7", Texts.money(2.7, "PEN"))
+        assertEquals("Bs 28", Texts.money(28.0, "BOB"))
     }
 }

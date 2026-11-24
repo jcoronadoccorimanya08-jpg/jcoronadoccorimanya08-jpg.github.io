@@ -40,7 +40,7 @@ private val HABIT_COLORS = intArrayOf(
 
 object Palettes {
     private val ACCENTS_VALQ = mapOf("verde" to 0xFF2EE6A8.toInt(), "violeta" to 0xFFB69CFF.toInt(), "lima" to 0xFFB8E65A.toInt(), "rosa" to 0xFFFF8AC4.toInt())
-    private val ACCENTS_BITACORA = mapOf("verde" to 0xFF3BBFA7.toInt(), "violeta" to 0xFFB69CFF.toInt(), "lima" to 0xFFB8E65A.toInt(), "rosa" to 0xFFFF8AC4.toInt())
+    private val ACCENTS_BITACORA = mapOf("verde" to 0xFF3BBFA7.toInt(), "violeta" to 0xFFB69CFF.toInt(), "lima" to 0xFFB8E65A.toInt(), "rosa" to 0xFFFF8AC4.toInt(), "vino" to 0xFFE0727F.toInt())
 
     fun of(appKey: String, accent: String): Palette {
         val valq = appKey == "valq"
@@ -77,6 +77,9 @@ object Texts {
         val n = if (whole) number(r.toInt()) else number(r.toInt()) + "," + Math.abs(Math.round(r * 10) % 10)
         return "Bs $n"
     }
+
+    /** En la moneda principal de BilleFlash: «S/ 2,7» o «Bs 28». */
+    fun money(x: Double, cur: String): String = if (cur == "PEN") "S/ " + bs(x).removePrefix("Bs ") else bs(x)
 
     fun daysUntil(f: Frame): Int = f.start?.let { ChronoUnit.DAYS.between(f.today, it).toInt() } ?: 1
 }
@@ -175,6 +178,7 @@ object WidgetRenderer {
         val f = shown.frame
         val p = Palettes.of(key, payload?.accent ?: "verde")
         val discreet = payload?.discreet == true
+        val cur = payload?.cur ?: "BOB"
         val active = shown.mode == Mode.ACTIVE && f != null
         val closed = active && f!!.closedPct != null
         // De noche (desde las 21:00 y hasta las 4:00), si todavía no cerraste: borde del color de la app.
@@ -189,8 +193,9 @@ object WidgetRenderer {
         views.setViewVisibility(R.id.chip, View.GONE)
 
         val diag = if (shown.mode == Mode.EMPTY || shown.mode == Mode.STALE) Diag.text(context, key) else null
-        views.setTextViewText(R.id.savings, if (active && !discreet) f!!.available?.let { "Quedan ${Texts.bs(it)}" } ?: "" else "")
+        views.setTextViewText(R.id.savings, if (active && !discreet) f!!.available?.let { "Quedan ${Texts.money(it, cur)}" } ?: "" else "")
         views.setTextColor(R.id.savings, p.accent)
+        views.setTextColor(R.id.urge, p.accent)
         val next = f?.nextIn
         views.setTextViewText(
             R.id.day,
@@ -212,7 +217,7 @@ object WidgetRenderer {
                 !active -> "" to false
                 f!!.urgent != null -> f.urgent to true
                 evening -> "Cierra tu día antes de dormir" to true
-                f.saveGoal != null -> goalLine(f.saveGoal) to false
+                f.saveGoal != null -> goalLine(f.saveGoal, cur) to false
                 closed -> "Día cerrado · ${f.closedPct} %" to false
                 else -> "Anota tus gastos de hoy" to false
             }
@@ -224,16 +229,16 @@ object WidgetRenderer {
             when {
                 !active -> "BilleFlash: abre la app desde Rachas para ver tu día."
                 discreet -> "BilleFlash: racha de ${f!!.streak} noches. Hoy vas ${f.usePct} % de tu límite."
-                else -> "BilleFlash: racha de ${f!!.streak} noches. Hoy gastaste ${f.spent?.let { Texts.bs(it) } ?: "—"} de ${f.limit?.let { Texts.bs(it) } ?: "—"}."
+                else -> "BilleFlash: racha de ${f!!.streak} noches. Hoy gastaste ${f.spent?.let { Texts.money(it, cur) } ?: "—"} de ${f.limit?.let { Texts.money(it, cur) } ?: "—"}."
             },
         )
         return views
     }
 
     /** «⭐ Fondo: 30 % · Bs 150 de 500»; en modo discreto, «⭐ Tu meta: 30 %». */
-    fun goalLine(g: GoalLine): String {
+    fun goalLine(g: GoalLine, cur: String = "BOB"): String {
         val name = g.name ?: "Tu meta"
-        val amounts = if (g.saved != null && g.target != null) " · ${Texts.bs(g.saved)} de ${Texts.bs(g.target).removePrefix("Bs ")}" else ""
+        val amounts = if (g.saved != null && g.target != null) " · ${Texts.money(g.saved, cur)} de ${Texts.bs(g.target).removePrefix("Bs ")}" else ""
         return "⭐ $name: ${g.pct} %$amounts"
     }
 
