@@ -175,9 +175,7 @@ object Chart {
 
     // ---------------------------------------------------------------- Mi Diario
 
-    private val DIARY_FACES = arrayOf("😞", "😕", "😐", "🙂", "😄")
-
-    /** Tus días escritos (la semana) a la izquierda; tus caritas de 7 días y la pregunta del día a la derecha. */
+    /** Tus días escritos (la semana) a la izquierda y la pregunta del día, grande, a la derecha. Sin caritas. */
     fun drawDiario(context: Context, shown: Shown, wDp: Float, hDp: Float, p: Palette, today: LocalDate): Bitmap {
         val (bmp, d) = bitmap(context, wDp, hDp)
         val c = Canvas(bmp)
@@ -185,39 +183,44 @@ object Chart {
         val h = bmp.height.toFloat()
         val f = shown.frame
         drawWeek(c, columns(if (shown.mode == Mode.STALE) null else f, today), d, w * 0.5f, 2 * d, h - d, null, p, d)
+        val q = f?.prompt ?: return bmp
         val left = w * 0.56f
         val right = w - d
-        val moods = f?.moods.orEmpty().takeLast(7)
-        val slot = (right - left) / 7f
-        val faceP = paint(p.text).apply { textSize = min(slot * 0.82f, 20f * d); textAlign = Paint.Align.CENTER }
-        val dot = paint(p.track)
-        val faceY = 4 * d + faceP.textSize
-        for (i in 0 until 7) {
-            val cx = left + slot * (i + 0.5f)
-            val m = moods.getOrNull(i) ?: 0
-            if (m in 1..5) c.drawText(DIARY_FACES[m - 1], cx, faceY, faceP) else c.drawCircle(cx, faceY - faceP.textSize * 0.35f, 3 * d, dot)
+        val label = paint(p.muted).apply { textSize = 11f * d; typeface = MEDIUM }
+        // La pregunta lo más grande posible que entre en 4 renglones.
+        var size = 17f * d
+        var lines: List<String>
+        val qp = paint(p.text).apply { typeface = BOLD }
+        while (true) {
+            qp.textSize = size
+            lines = wrap(q, qp, right - left)
+            val block = label.textSize + 6 * d + lines.size * size * 1.25f
+            if ((lines.size <= 4 && block <= h - 4 * d) || size <= 10f * d) break
+            size -= 1f * d
         }
-        val q = f?.prompt ?: return bmp
-        val qp = paint(p.muted).apply { textSize = 12f * d; typeface = MEDIUM }
-        // La pregunta en hasta 3 renglones.
-        val words = q.split(" ")
-        val lines = ArrayList<String>()
+        val block = label.textSize + 6 * d + lines.size * size * 1.25f
+        var y = (h - block) / 2f + label.textSize
+        c.drawText("Pregunta del día", left, y, label)
+        y += 6 * d + size
+        for (ln in lines.take(4)) {
+            c.drawText(ln, left, y, qp)
+            y += size * 1.25f
+        }
+        return bmp
+    }
+
+    private fun wrap(text: String, paint: Paint, max: Float): List<String> {
+        val out = ArrayList<String>()
         var cur = ""
-        for (wd in words) {
+        for (wd in text.split(" ")) {
             val t = if (cur.isEmpty()) wd else "$cur $wd"
-            if (qp.measureText(t) <= right - left) cur = t else {
-                lines.add(cur)
+            if (paint.measureText(t) <= max || cur.isEmpty()) cur = t else {
+                out.add(cur)
                 cur = wd
             }
         }
-        if (cur.isNotEmpty()) lines.add(cur)
-        var y = faceY + 10 * d + qp.textSize
-        for (ln in lines.take(3)) {
-            if (y > h - 2 * d) break
-            c.drawText(ln, left, y, qp)
-            y += qp.textSize * 1.3f
-        }
-        return bmp
+        if (cur.isNotEmpty()) out.add(cur)
+        return out
     }
 
     // ---------------------------------------------------------------- Bitácora

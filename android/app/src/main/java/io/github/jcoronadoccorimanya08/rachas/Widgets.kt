@@ -238,8 +238,6 @@ object WidgetRenderer {
         return views
     }
 
-    private val FACES = arrayOf("😞", "😕", "😐", "🙂", "😄")
-
     /** Mi Diario: racha, tu semana, tus caritas y la pregunta del día. Nunca lo que escribiste. */
     private fun renderDiario(context: Context, widthDp: Int, heightDp: Int, now: ZonedDateTime): RemoteViews {
         val key = "midiario"
@@ -263,7 +261,7 @@ object WidgetRenderer {
         views.setTextColor(R.id.streak, p.text)
         views.setViewVisibility(R.id.chip, View.GONE)
         val ago = f?.yearAgoMood
-        views.setTextViewText(R.id.savings, if (active && ago != null) "Hace un año: ${if (ago in 1..5) FACES[ago - 1] else "✍️"}" else "")
+        views.setTextViewText(R.id.savings, if (active && ago != null) "📖 Hace un año escribiste" else "")
         views.setTextColor(R.id.savings, p.accent)
         val diag = if (shown.mode == Mode.EMPTY || shown.mode == Mode.STALE) Diag.text(context, key) else null
         views.setTextViewText(R.id.day, diag ?: if (active) "Día ${f!!.dayNumber}" else "")
