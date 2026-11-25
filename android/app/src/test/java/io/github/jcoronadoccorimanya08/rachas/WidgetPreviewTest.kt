@@ -197,6 +197,16 @@ class WidgetPreviewTest {
         Triple("billeflash-6-soles-vino", JSONObject(billePayload(billeFrame(thu, 3, listOf(100, 100, 100, 75, 0), 1.5, 3.0, 2.8, 50, null, null))).put("cur", "PEN").put("accent", "vino").toString(), at("2026-11-26T17:00:00")),
     )
 
+    /** Mi Diario, con datos inventados (nunca hay texto en el widget). */
+    private fun diarioPayload(streak: Int, closed: Int?, moods: List<Int>): String {
+        val f = JSONObject().put("today", thu.toString()).put("dayNumber", 12).put("streak", streak).put("closedPct", closed ?: JSONObject.NULL)
+            .put("days", days(thu, listOf(100, 100, 75, 100, 100, 100, if (closed != null) 100 else 0), 1))
+            .put("moods", JSONArray(moods.mapIndexed { i, m -> JSONObject().put("d", thu.minusDays((6 - i).toLong()).toString()).put("m", m) }))
+            .put("prompt", "¿Qué conversación te quedó dando vueltas?")
+            .put("yearAgo", JSONObject().put("d", "2025-11-26").put("m", 4))
+        return payload("midiario", f)
+    }
+
     // ------------------------------------------------------------ Dibujo
 
     private fun store(app: String, json: String?) {
@@ -256,6 +266,14 @@ class WidgetPreviewTest {
             store("billeflash", json)
             all.add(name to widgetBitmap("billeflash", now))
         }
+        for ((name, json, now) in listOf(
+            Triple("diario-1-sin-escribir", diarioPayload(6, null, listOf(4, 5, 3, 4, 4, 2, 0)), at("2026-11-26T18:40:00")),
+            Triple("diario-2-noche", diarioPayload(6, null, listOf(4, 5, 3, 4, 4, 2, 0)), at("2026-11-26T22:10:00")),
+            Triple("diario-3-escrito", diarioPayload(7, 100, listOf(4, 5, 3, 4, 4, 2, 5)), at("2026-11-26T23:00:00")),
+        )) {
+            store("midiario", json)
+            all.add(name to widgetBitmap("midiario", now))
+        }
         all.forEach { (name, bmp) -> save(onWallpaper(listOf(bmp)), File(out, "$name.png")) }
         // La pantalla de inicio: Bitácora arriba y Val Q abajo, como en tu teléfono.
         save(onWallpaper(listOf(all.first { it.first == "bitacora-1-dia-limpio" }.second, all.first { it.first == "valq-1-dia-ganado" }.second)), File(out, "pantalla.png"))
@@ -265,6 +283,7 @@ class WidgetPreviewTest {
             save(all.first { it.first == "valq-1-dia-ganado" }.second, File(res, "preview_valq.png"))
             save(all.first { it.first == "bitacora-1-dia-limpio" }.second, File(res, "preview_bitacora.png"))
             save(all.first { it.first == "billeflash-1-dentro" }.second, File(res, "preview_billeflash.png"))
+            save(all.first { it.first == "diario-3-escrito" }.second, File(res, "preview_diario.png"))
         }
     }
 
@@ -346,6 +365,10 @@ class WidgetPreviewTest {
         assertEquals("billeflash", withBf.app)
         assertFalse(withBf.text, withBf.text.contains("Bs"))
         assertNull("todo listo, también BilleFlash", Reminder.compose(vqDone, btDone, bfClosed))
+        val dfOpen = Model.pick(Model.parse(diarioPayload(6, null, listOf(4))), thu)
+        assertEquals("midiario", Reminder.compose(vqDone, btDone, bfClosed, dfOpen)!!.app)
+        assertTrue(Reminder.compose(vqDone, btDone, bfClosed, dfOpen)!!.text.contains("Mi Diario: escribe tu día"))
+        assertNull(Reminder.compose(vqDone, btDone, bfClosed, Model.pick(Model.parse(diarioPayload(7, 100, listOf(4))), thu)))
         // Sin datos todavía: igual te recuerda.
         assertNotNull(Reminder.compose(Model.pick(null, thu), Model.pick(null, thu)))
     }

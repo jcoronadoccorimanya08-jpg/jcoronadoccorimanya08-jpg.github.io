@@ -77,6 +77,7 @@ class TickReceiver : BroadcastReceiver() {
         ValQWidget.updateAll(context)
         BitacoraWidget.updateAll(context)
         BilleFlashWidget.updateAll(context)
+        DiarioWidget.updateAll(context)
         Ticker.scheduleAll(context)
     }
 }
@@ -99,7 +100,8 @@ object Reminder {
         val bt = Model.pick(WidgetStore.load(context, "bitacora")?.takeUnless { it.test }, today)
         // BilleFlash: su día cambia a las 4:00, pero a las 22:30 es el mismo día del calendario.
         val bf = WidgetStore.load(context, "billeflash")?.let { Model.pick(it, today) }
-        val msg = compose(vq, bt, bf) ?: return
+        val df = WidgetStore.load(context, "midiario")?.let { Model.pick(it, today) }
+        val msg = compose(vq, bt, bf, df) ?: return
         val nm = context.getSystemService(NotificationManager::class.java) ?: return
         nm.createNotificationChannel(
             NotificationChannel(CHANNEL, "Recordatorio de las 22:30", NotificationManager.IMPORTANCE_HIGH).apply {
@@ -120,7 +122,8 @@ object Reminder {
             .setContentIntent(WidgetRenderer.open(context, msg.app, urge = false))
             .addAction(Notification.Action.Builder(icon, "Val Q", WidgetRenderer.open(context, "valq", urge = false)).build())
             .addAction(Notification.Action.Builder(icon, "Bitácora", WidgetRenderer.open(context, "bitacora", urge = false)).build())
-            .apply { if (bf != null) addAction(Notification.Action.Builder(icon, "BilleFlash", WidgetRenderer.open(context, "billeflash", urge = false)).build()) }
+            .apply { if (df != null) addAction(Notification.Action.Builder(icon, "Mi Diario", WidgetRenderer.open(context, "midiario", urge = false)).build()) }
+            .apply { if (bf != null && df == null) addAction(Notification.Action.Builder(icon, "BilleFlash", WidgetRenderer.open(context, "billeflash", urge = false)).build()) }
             .setCategory(Notification.CATEGORY_REMINDER)
             .setVisibility(Notification.VISIBILITY_PRIVATE)
             .setPublicVersion(public)
@@ -130,7 +133,7 @@ object Reminder {
     }
 
     /** El texto según lo que ya marcaste hoy. Null si no hay nada que anotar. */
-    fun compose(vq: Shown, bt: Shown, bf: Shown? = null): Message? {
+    fun compose(vq: Shown, bt: Shown, bf: Shown? = null, df: Shown? = null): Message? {
         val vqOff = vq.mode == Mode.BEFORE || vq.mode == Mode.FINISHED
         val btOff = bt.mode == Mode.BEFORE || bt.mode == Mode.FINISHED
         // BilleFlash solo cuenta si ya lo usas (mandó algo al widget).
@@ -138,16 +141,20 @@ object Reminder {
         val bfDone = bfOn && bf!!.frame?.closedPct != null
         val vqDone = vq.mode == Mode.ACTIVE && vq.frame?.left == 0
         val btDone = bt.mode == Mode.ACTIVE && bt.frame?.todayDone == true
-        if ((vqDone || vqOff) && (btDone || btOff) && (!bfOn || bfDone)) return null
+        val dfOn = df != null && df.mode == Mode.ACTIVE
+        val dfDone = dfOn && df!!.frame?.closedPct != null
+        if ((vqDone || vqOff) && (btDone || btOff) && (!bfOn || bfDone) && (!dfOn || dfDone)) return null
         val lines = ArrayList<String>()
         if (!vqOff) lines.add(valqLine(vq))
         if (!btOff) lines.add(if (btDone) "Bitácora: lista ✓" else "Bitácora: marca tu día.")
         if (bfOn) lines.add(if (bfDone) "BilleFlash: día cerrado ✓" else "BilleFlash: anota tus gastos y cierra tu día.")
+        if (dfOn) lines.add(if (dfDone) "Mi Diario: día escrito ✓" else "Mi Diario: escribe tu día ✍️")
         val title = if (bfOn && !bfDone) "Hora de anotar tu día y tus gastos" else "Hora de anotar tu día"
         val app = when {
             !vqDone && !vqOff -> "valq"
             !btDone && !btOff -> "bitacora"
             bfOn && !bfDone -> "billeflash"
+            dfOn && !dfDone -> "midiario"
             else -> "bitacora"
         }
         return Message(title, lines.joinToString("\n"), app)

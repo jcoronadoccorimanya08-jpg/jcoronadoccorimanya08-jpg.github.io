@@ -70,6 +70,12 @@ data class Frame(
     val antojos: Double? = null,
     /** BilleFlash: tu meta principal (% siempre; nombre y montos solo sin modo discreto). */
     val saveGoal: GoalLine? = null,
+    /** Mi Diario: tu ánimo de los últimos 7 días (0 si no pusiste). */
+    val moods: List<Int> = emptyList(),
+    /** Mi Diario: la pregunta del día. */
+    val prompt: String? = null,
+    /** Mi Diario: «hace un año hoy» (solo la carita; 0 si no pusiste). */
+    val yearAgoMood: Int? = null,
 ) {
     val cycleEnd: LocalDate? get() = start?.plusDays((cycleLength - 1).toLong())
 }
@@ -196,6 +202,9 @@ object Model {
             urgent = o.optString("urgent").takeIf { it.isNotBlank() && it != "null" && !o.isNull("urgent") }?.take(40),
             closedPct = int(o, "closedPct")?.coerceIn(0, 100),
             antojos = dbl(o, "antojos"),
+            moods = o.optJSONArray("moods")?.let { arr -> (0 until arr.length()).map { i -> arr.optJSONObject(i)?.optInt("m")?.coerceIn(0, 5) ?: 0 } } ?: emptyList(),
+            prompt = o.optString("prompt").takeIf { it.isNotBlank() && !o.isNull("prompt") }?.take(90),
+            yearAgoMood = o.optJSONObject("yearAgo")?.optInt("m")?.coerceIn(0, 5),
             saveGoal = o.optJSONObject("goal")?.let { g ->
                 GoalLine(g.optInt("pct").coerceIn(0, 100), g.optString("name").takeIf { !g.isNull("name") && it.isNotBlank() }?.take(24), dbl(g, "saved"), dbl(g, "target"))
             },

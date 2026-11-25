@@ -7,5 +7,7 @@
     <string name="widget_bitacora_desc">Tu racha, tu ahorro y tu semana, sin nombres. Con el botón «Tengo un antojo».</string>
     <string name="widget_billeflash">BilleFlash · tu plata</string>
     <string name="widget_billeflash_desc">Tu racha de cada noche, lo gastado hoy contra tu límite, lo que queda de la quincena y lo urgente. Con modo discreto.</string>
+    <string name="widget_diario">Mi Diario · racha</string>
+    <string name="widget_diario_desc">Tu racha de escribir, tus caritas de la semana y la pregunta del día. Nunca muestra lo que escribes.</string>
     <string name="asset_statements" translatable="false">[{\"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": {\"namespace\": \"web\", \"site\": \"https://jcoronadoccorimanya08-jpg.github.io\"}}]</string>
 </resources>

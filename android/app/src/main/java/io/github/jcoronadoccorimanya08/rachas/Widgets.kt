@@ -96,6 +96,7 @@ object WidgetRenderer {
         val target = when (appKey) {
             "valq" -> ValQActivity::class.java
             "billeflash" -> BilleFlashActivity::class.java
+            "midiario" -> DiarioActivity::class.java
             else -> BitacoraActivity::class.java
         }
         val intent = Intent(context, target).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -103,6 +104,7 @@ object WidgetRenderer {
         val code = when {
             appKey == "valq" -> 1
             appKey == "billeflash" -> 4
+            appKey == "midiario" -> 5
             urge -> 3
             else -> 2
         }
@@ -111,6 +113,7 @@ object WidgetRenderer {
 
     fun render(context: Context, appKey: String, widthDp: Int, heightDp: Int, now: ZonedDateTime = ZonedDateTime.now(LA_PAZ)): RemoteViews {
         if (appKey == "billeflash") return renderBilleFlash(context, widthDp, heightDp, now)
+        if (appKey == "midiario") return renderDiario(context, widthDp, heightDp, now)
         val valq = appKey == "valq"
         val views = RemoteViews(context.packageName, if (valq) R.layout.widget_valq else R.layout.widget_bitacora)
         views.setOnClickPendingIntent(android.R.id.background, open(context, appKey, urge = false))
@@ -232,6 +235,56 @@ object WidgetRenderer {
                 else -> "BilleFlash: racha de ${f!!.streak} noches. Hoy gastaste ${f.spent?.let { Texts.money(it, cur) } ?: "—"} de ${f.limit?.let { Texts.money(it, cur) } ?: "—"}."
             },
         )
+        return views
+    }
+
+    private val FACES = arrayOf("😞", "😕", "😐", "🙂", "😄")
+
+    /** Mi Diario: racha, tu semana, tus caritas y la pregunta del día. Nunca lo que escribiste. */
+    private fun renderDiario(context: Context, widthDp: Int, heightDp: Int, now: ZonedDateTime): RemoteViews {
+        val key = "midiario"
+        val views = RemoteViews(context.packageName, R.layout.widget_diario)
+        views.setOnClickPendingIntent(android.R.id.background, open(context, key, urge = false))
+        views.setOnClickPendingIntent(R.id.urge, open(context, key, urge = false))
+        val today = billeFlashDay(now)
+        val payload = WidgetStore.load(context, key)?.takeIf { it.app == key }
+        val shown = Model.pick(payload, today)
+        val f = shown.frame
+        val p = Palettes.of(key, payload?.accent ?: "verde")
+        val active = shown.mode == Mode.ACTIVE && f != null
+        val closed = active && f!!.closedPct != null
+        val evening = active && !closed && (now.hour >= EVENING_HOUR || now.hour < BF_DAY_START)
+        views.setViewVisibility(R.id.glow, if (active && (f!!.streak >= 7 || closed)) View.VISIBLE else View.GONE)
+        views.setInt(R.id.glow, "setColorFilter", p.accent)
+        views.setViewVisibility(R.id.outline, if (evening) View.VISIBLE else View.GONE)
+        views.setInt(R.id.outline, "setColorFilter", p.accent)
+        views.setImageViewResource(R.id.flame, if (active && f!!.streak > 0) R.drawable.ic_flame else R.drawable.ic_flame_off)
+        views.setTextViewText(R.id.streak, if (active) bigNumber(f!!.streak, if (f.streak == 1) "día" else "días", p) else "Mi Diario")
+        views.setTextColor(R.id.streak, p.text)
+        views.setViewVisibility(R.id.chip, View.GONE)
+        val ago = f?.yearAgoMood
+        views.setTextViewText(R.id.savings, if (active && ago != null) "Hace un año: ${if (ago in 1..5) FACES[ago - 1] else "✍️"}" else "")
+        views.setTextColor(R.id.savings, p.accent)
+        val diag = if (shown.mode == Mode.EMPTY || shown.mode == Mode.STALE) Diag.text(context, key) else null
+        views.setTextViewText(R.id.day, diag ?: if (active) "Día ${f!!.dayNumber}" else "")
+        views.setTextColor(R.id.day, p.muted)
+        views.setTextColor(R.id.urge, p.accent)
+        val chartW = (widthDp - 28).coerceAtLeast(160).toFloat()
+        val chartH = (heightDp - 104).coerceAtLeast(44).toFloat()
+        views.setImageViewBitmap(R.id.chart, Chart.drawDiario(context, shown, chartW, chartH, p, today))
+        val (line, strong) = when (shown.mode) {
+            Mode.EMPTY -> "Toca y desbloquea tu diario" to false
+            Mode.STALE -> "Toca para ponerte al día" to false
+            else -> when {
+                !active -> "" to false
+                closed -> "Día escrito · ${f!!.closedPct} % ✓" to false
+                evening -> "Escribe tu día antes de dormir" to true
+                else -> "Hoy todavía no escribes" to false
+            }
+        }
+        views.setTextViewText(R.id.line, line)
+        views.setTextColor(R.id.line, if (strong) p.accent else p.muted)
+        views.setContentDescription(android.R.id.background, if (active) "Mi Diario: racha de ${f!!.streak} días.${if (closed) " Hoy ya escribiste." else ""}" else "Mi Diario: abre la app desde Rachas.")
         return views
     }
 
@@ -399,6 +452,12 @@ class ValQWidget : RachasWidgetProvider("valq") {
     }
 }
 
+class DiarioWidget : RachasWidgetProvider("midiario") {
+    companion object {
+        fun updateAll(context: Context) = Widgets.updateAll(context, "midiario")
+    }
+}
+
 class BilleFlashWidget : RachasWidgetProvider("billeflash") {
     companion object {
         fun updateAll(context: Context) = Widgets.updateAll(context, "billeflash")
@@ -415,12 +474,14 @@ object Widgets {
     private fun provider(appKey: String): Class<*> = when (appKey) {
         "valq" -> ValQWidget::class.java
         "billeflash" -> BilleFlashWidget::class.java
+        "midiario" -> DiarioWidget::class.java
         else -> BitacoraWidget::class.java
     }
 
     private fun layout(appKey: String): Int = when (appKey) {
         "valq" -> R.layout.widget_valq
         "billeflash" -> R.layout.widget_billeflash
+        "midiario" -> R.layout.widget_diario
         else -> R.layout.widget_bitacora
     }
 
@@ -430,7 +491,7 @@ object Widgets {
         IntArray(0)
     }
 
-    fun hasAny(context: Context) = listOf("valq", "bitacora", "billeflash").any { ids(context, it).isNotEmpty() }
+    fun hasAny(context: Context) = listOf("valq", "bitacora", "billeflash", "midiario").any { ids(context, it).isNotEmpty() }
 
     /** Tamaño del widget en dp (en vertical: ancho mínimo y alto máximo). */
     private fun sizeDp(manager: AppWidgetManager, id: Int): Pair<Int, Int> {

@@ -173,6 +173,53 @@ object Chart {
         return bmp
     }
 
+    // ---------------------------------------------------------------- Mi Diario
+
+    private val DIARY_FACES = arrayOf("😞", "😕", "😐", "🙂", "😄")
+
+    /** Tus días escritos (la semana) a la izquierda; tus caritas de 7 días y la pregunta del día a la derecha. */
+    fun drawDiario(context: Context, shown: Shown, wDp: Float, hDp: Float, p: Palette, today: LocalDate): Bitmap {
+        val (bmp, d) = bitmap(context, wDp, hDp)
+        val c = Canvas(bmp)
+        val w = bmp.width.toFloat()
+        val h = bmp.height.toFloat()
+        val f = shown.frame
+        drawWeek(c, columns(if (shown.mode == Mode.STALE) null else f, today), d, w * 0.5f, 2 * d, h - d, null, p, d)
+        val left = w * 0.56f
+        val right = w - d
+        val moods = f?.moods.orEmpty().takeLast(7)
+        val slot = (right - left) / 7f
+        val faceP = paint(p.text).apply { textSize = min(slot * 0.82f, 20f * d); textAlign = Paint.Align.CENTER }
+        val dot = paint(p.track)
+        val faceY = 4 * d + faceP.textSize
+        for (i in 0 until 7) {
+            val cx = left + slot * (i + 0.5f)
+            val m = moods.getOrNull(i) ?: 0
+            if (m in 1..5) c.drawText(DIARY_FACES[m - 1], cx, faceY, faceP) else c.drawCircle(cx, faceY - faceP.textSize * 0.35f, 3 * d, dot)
+        }
+        val q = f?.prompt ?: return bmp
+        val qp = paint(p.muted).apply { textSize = 12f * d; typeface = MEDIUM }
+        // La pregunta en hasta 3 renglones.
+        val words = q.split(" ")
+        val lines = ArrayList<String>()
+        var cur = ""
+        for (wd in words) {
+            val t = if (cur.isEmpty()) wd else "$cur $wd"
+            if (qp.measureText(t) <= right - left) cur = t else {
+                lines.add(cur)
+                cur = wd
+            }
+        }
+        if (cur.isNotEmpty()) lines.add(cur)
+        var y = faceY + 10 * d + qp.textSize
+        for (ln in lines.take(3)) {
+            if (y > h - 2 * d) break
+            c.drawText(ln, left, y, qp)
+            y += qp.textSize * 1.3f
+        }
+        return bmp
+    }
+
     // ---------------------------------------------------------------- Bitácora
 
     fun drawBitacora(context: Context, shown: Shown, wDp: Float, hDp: Float, p: Palette, today: LocalDate): Bitmap {

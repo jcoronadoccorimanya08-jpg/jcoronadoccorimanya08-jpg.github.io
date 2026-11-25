@@ -11,8 +11,8 @@ android {
         applicationId = "io.github.jcoronadoccorimanya08.rachas"
         minSdk = 26
         targetSdk = 35
-        versionCode = 10
-        versionName = "3.7"
+        versionCode = 11
+        versionName = "3.8"
     }
 
     signingConfigs {
