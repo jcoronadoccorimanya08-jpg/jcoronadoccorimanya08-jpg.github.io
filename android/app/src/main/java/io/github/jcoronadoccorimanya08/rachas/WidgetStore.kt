@@ -16,6 +16,7 @@ object WidgetStore {
             "bitacora" -> BitacoraWidget.updateAll(context)
             "billeflash" -> BilleFlashWidget.updateAll(context)
             "midiario" -> DiarioWidget.updateAll(context)
+            "focusflow" -> FocusWidget.updateAll(context)
         }
         return true
     }

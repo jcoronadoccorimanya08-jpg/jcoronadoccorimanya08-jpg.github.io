@@ -84,6 +84,20 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".FocusActivity"
+            android:exported="true"
+            android:icon="@mipmap/ic_focus"
+            android:label="Focus Flow"
+            android:launchMode="singleTask"
+            android:taskAffinity=".focusflow"
+            android:theme="@style/Theme.Rachas.Launcher">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
         <!-- Chrome se conecta aquí para entregar lo que manda la app web (sin esto, el widget no recibe nada). -->
         <service
             android:name="androidx.browser.customtabs.PostMessageService"
@@ -149,6 +163,18 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_diario_info" />
+        </receiver>
+        <receiver
+            android:name=".FocusWidget"
+            android:exported="false"
+            android:label="@string/widget_focus">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.appwidget.action.APPWIDGET_OPTIONS_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_focus_info" />
         </receiver>
     </application>
 </manifest>

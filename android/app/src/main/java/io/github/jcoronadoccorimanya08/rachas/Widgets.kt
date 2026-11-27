@@ -58,6 +58,13 @@ object Texts {
 
     fun days(n: Int) = if (n == 1) "1 día" else "$n días"
 
+    /** 85 → «1 h 25 min»; 45 → «45 min». */
+    fun minutes(m: Int): String = when {
+        m < 60 -> "$m min"
+        m % 60 == 0 -> "${m / 60} h"
+        else -> "${m / 60} h ${m % 60} min"
+    }
+
     /** «lun 9 nov». */
     fun date(d: LocalDate) = "${WEEKDAYS[d.dayOfWeek.value - 1]} ${d.dayOfMonth} ${MONTHS[d.monthValue - 1]}"
 
@@ -97,6 +104,7 @@ object WidgetRenderer {
             "valq" -> ValQActivity::class.java
             "billeflash" -> BilleFlashActivity::class.java
             "midiario" -> DiarioActivity::class.java
+            "focusflow" -> FocusActivity::class.java
             else -> BitacoraActivity::class.java
         }
         val intent = Intent(context, target).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -105,6 +113,7 @@ object WidgetRenderer {
             appKey == "valq" -> 1
             appKey == "billeflash" -> 4
             appKey == "midiario" -> 5
+            appKey == "focusflow" -> 6
             urge -> 3
             else -> 2
         }
@@ -114,6 +123,7 @@ object WidgetRenderer {
     fun render(context: Context, appKey: String, widthDp: Int, heightDp: Int, now: ZonedDateTime = ZonedDateTime.now(LA_PAZ)): RemoteViews {
         if (appKey == "billeflash") return renderBilleFlash(context, widthDp, heightDp, now)
         if (appKey == "midiario") return renderDiario(context, widthDp, heightDp, now)
+        if (appKey == "focusflow") return renderFocus(context, widthDp, heightDp, now)
         val valq = appKey == "valq"
         val views = RemoteViews(context.packageName, if (valq) R.layout.widget_valq else R.layout.widget_bitacora)
         views.setOnClickPendingIntent(android.R.id.background, open(context, appKey, urge = false))
@@ -283,6 +293,56 @@ object WidgetRenderer {
         views.setTextViewText(R.id.line, line)
         views.setTextColor(R.id.line, if (strong) p.accent else p.muted)
         views.setContentDescription(android.R.id.background, if (active) "Mi Diario: racha de ${f!!.streak} días.${if (closed) " Hoy ya escribiste." else ""}" else "Mi Diario: abre la app desde Rachas.")
+        return views
+    }
+
+    /** Focus Flow: tu arbolito de hoy, minutos y meta, racha, repasos y próximo examen. */
+    private fun renderFocus(context: Context, widthDp: Int, heightDp: Int, now: ZonedDateTime): RemoteViews {
+        val key = "focusflow"
+        val views = RemoteViews(context.packageName, R.layout.widget_focus)
+        views.setOnClickPendingIntent(android.R.id.background, open(context, key, urge = false))
+        views.setOnClickPendingIntent(R.id.urge, open(context, key, urge = false))
+        val today = billeFlashDay(now)
+        val payload = WidgetStore.load(context, key)?.takeIf { it.app == key }
+        val shown = Model.pick(payload, today)
+        val f = shown.frame
+        val p = Palettes.of(key, payload?.accent ?: "verde")
+        val active = shown.mode == Mode.ACTIVE && f != null
+        val met = active && (f!!.focusMin ?: 0) >= (f.focusGoal ?: Int.MAX_VALUE)
+        views.setViewVisibility(R.id.glow, if (active && (f!!.streak >= 7 || met)) View.VISIBLE else View.GONE)
+        views.setInt(R.id.glow, "setColorFilter", p.accent)
+        views.setViewVisibility(R.id.outline, View.GONE)
+        views.setImageViewResource(R.id.flame, if (active && f!!.streak > 0) R.drawable.ic_flame else R.drawable.ic_flame_off)
+        views.setTextViewText(R.id.streak, if (active) bigNumber(f!!.streak, if (f.streak == 1) "día" else "días", p) else "Focus Flow")
+        views.setTextColor(R.id.streak, p.text)
+        views.setViewVisibility(R.id.chip, View.GONE)
+        val exam = if (active) f!!.examIn else null
+        views.setTextViewText(R.id.savings, when {
+            exam == null -> ""
+            exam == 0 -> "📅 ¡Hoy es tu examen!"
+            else -> "📅 ${f!!.examName ?: "Examen"} en $exam ${if (exam == 1) "día" else "días"}"
+        })
+        views.setTextColor(R.id.savings, p.accent)
+        val diag = if (shown.mode == Mode.EMPTY || shown.mode == Mode.STALE) Diag.text(context, key) else null
+        views.setTextViewText(R.id.day, diag ?: if (active && f!!.reviewsDue > 0) "🔁 ${f.reviewsDue} ${if (f.reviewsDue == 1) "repaso" else "repasos"}" else "")
+        views.setTextColor(R.id.day, p.muted)
+        views.setTextColor(R.id.urge, p.accent)
+        val chartW = (widthDp - 28).coerceAtLeast(160).toFloat()
+        val chartH = (heightDp - 104).coerceAtLeast(44).toFloat()
+        views.setImageViewBitmap(R.id.chart, Chart.drawFocus(context, shown, chartW, chartH, p, today))
+        val (line, strong) = when (shown.mode) {
+            Mode.EMPTY -> "Toca y abre Focus Flow" to false
+            Mode.STALE -> "Toca para ponerte al día" to false
+            else -> when {
+                !active -> "" to false
+                met -> "¡Meta de hoy cumplida! 🌳" to true
+                (f!!.focusMin ?: 0) == 0 -> "Hoy todavía no estudias" to false
+                else -> "Meta: ${Texts.minutes(f.focusMin ?: 0)} de ${Texts.minutes(f.focusGoal ?: 0)}" to false
+            }
+        }
+        views.setTextViewText(R.id.line, line)
+        views.setTextColor(R.id.line, if (strong) p.accent else p.muted)
+        views.setContentDescription(android.R.id.background, if (active) "Focus Flow: hoy ${f!!.focusMin ?: 0} minutos, racha de ${f.streak} días." else "Focus Flow: abre la app desde Rachas.")
         return views
     }
 
@@ -456,6 +516,12 @@ class DiarioWidget : RachasWidgetProvider("midiario") {
     }
 }
 
+class FocusWidget : RachasWidgetProvider("focusflow") {
+    companion object {
+        fun updateAll(context: Context) = Widgets.updateAll(context, "focusflow")
+    }
+}
+
 class BilleFlashWidget : RachasWidgetProvider("billeflash") {
     companion object {
         fun updateAll(context: Context) = Widgets.updateAll(context, "billeflash")
@@ -473,6 +539,7 @@ object Widgets {
         "valq" -> ValQWidget::class.java
         "billeflash" -> BilleFlashWidget::class.java
         "midiario" -> DiarioWidget::class.java
+        "focusflow" -> FocusWidget::class.java
         else -> BitacoraWidget::class.java
     }
 
@@ -480,6 +547,7 @@ object Widgets {
         "valq" -> R.layout.widget_valq
         "billeflash" -> R.layout.widget_billeflash
         "midiario" -> R.layout.widget_diario
+        "focusflow" -> R.layout.widget_focus
         else -> R.layout.widget_bitacora
     }
 
@@ -489,7 +557,7 @@ object Widgets {
         IntArray(0)
     }
 
-    fun hasAny(context: Context) = listOf("valq", "bitacora", "billeflash", "midiario").any { ids(context, it).isNotEmpty() }
+    fun hasAny(context: Context) = listOf("valq", "bitacora", "billeflash", "midiario", "focusflow").any { ids(context, it).isNotEmpty() }
 
     /** Tamaño del widget en dp (en vertical: ancho mínimo y alto máximo). */
     private fun sizeDp(manager: AppWidgetManager, id: Int): Pair<Int, Int> {

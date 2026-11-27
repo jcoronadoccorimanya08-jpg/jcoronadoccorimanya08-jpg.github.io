@@ -224,6 +224,11 @@ class DiarioActivity : TwaLauncherActivity() {
     override val appKey = "midiario"
 }
 
+class FocusActivity : TwaLauncherActivity() {
+    override val path = "/focus-flow/"
+    override val appKey = "focusflow"
+}
+
 class BilleFlashActivity : TwaLauncherActivity() {
     override val path = "/BilleFlash/"
     override val appKey = "billeflash"

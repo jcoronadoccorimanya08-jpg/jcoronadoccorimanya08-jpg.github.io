@@ -173,6 +173,105 @@ object Chart {
         return bmp
     }
 
+    // ---------------------------------------------------------------- Focus Flow
+
+    /** Tu arbolito de hoy (dibujado como en la app) a la izquierda; minutos, etapa y tu semana a la derecha. */
+    fun drawFocus(context: Context, shown: Shown, wDp: Float, hDp: Float, p: Palette, today: LocalDate): Bitmap {
+        val (bmp, d) = bitmap(context, wDp, hDp)
+        val c = Canvas(bmp)
+        val w = bmp.width.toFloat()
+        val h = bmp.height.toFloat()
+        val f = if (shown.mode == Mode.STALE) null else shown.frame
+        val minutes = f?.focusMin ?: 0
+        val treeW = min(w * 0.36f, h * 1.05f)
+        drawTree(c, treeW / 2f + d, h - 2 * d, treeW, h - 3 * d, minutes)
+        val left = treeW + 10 * d
+        val right = w - d
+        val big = paint(p.text).apply { textSize = min(26f * d, h * 0.3f); typeface = BOLD }
+        val small = paint(p.muted).apply { textSize = 11f * d; typeface = MEDIUM }
+        val acc = paint(p.accent).apply { textSize = 12f * d; typeface = BOLD }
+        var y = big.textSize + 2 * d
+        c.drawText(Texts.minutes(minutes), left, y, big)
+        y += 4 * d + acc.textSize
+        c.drawText(f?.treeLabel ?: "Semilla", left, y, acc)
+        f?.treeNext?.let {
+            y += 3 * d + small.textSize
+            c.drawText("Faltan $it", left, y, small)
+        }
+        // La semana: una barra por día (llena = meta cumplida).
+        val cols = f?.days.orEmpty().takeLast(7)
+        if (cols.isNotEmpty()) {
+            val barTop = y + 8 * d
+            val barBottom = h - 2 * d - small.textSize
+            if (barBottom - barTop > 10 * d) {
+                val gap = 4 * d
+                val bw = ((right - left) - gap * 6) / 7f
+                val lbl = paint(p.muted).apply { textSize = 8.5f * d; typeface = MEDIUM; textAlign = Paint.Align.CENTER }
+                cols.forEachIndexed { i, day ->
+                    val x = left + i * (bw + gap)
+                    val track = paint(p.track)
+                    c.drawRoundRect(RectF(x, barTop, x + bw, barBottom), 3 * d, 3 * d, track)
+                    val hh = (barBottom - barTop) * (day.pct / 100f)
+                    if (hh > 0) {
+                        val fill = paint(if (day.won) p.accent else (p.accent and 0x00FFFFFF) or (0x88 shl 24))
+                        c.drawRoundRect(RectF(x, barBottom - hh, x + bw, barBottom), 3 * d, 3 * d, fill)
+                    }
+                    c.drawText(INITIALS[day.date.dayOfWeek.value - 1], x + bw / 2f, h - 2 * d, lbl.apply { color = if (day.date == today) p.text else p.muted })
+                }
+            }
+        }
+        return bmp
+    }
+
+    /** El arbolito, por etapas como en Focus Flow: semilla, tronco (25), ramas (50), hojas (60), flores (2 h), frutos (3 h). */
+    private fun drawTree(c: Canvas, cx: Float, ground: Float, width: Float, height: Float, minutes: Int) {
+        val u = min(width / 120f, height / 140f)
+        fun lerp(a: Float, b: Float, t: Float) = a + (b - a) * t.coerceIn(0f, 1f)
+        val m = minutes.toFloat()
+        val groundP = paint(0xFF2F3A2E.toInt())
+        c.drawOval(RectF(cx - 40 * u, ground - 4 * u, cx + 40 * u, ground + 10 * u), groundP)
+        if (m <= 0f) {
+            c.drawOval(RectF(cx - 6 * u, ground - 6 * u, cx + 6 * u, ground + 3 * u), paint(0xFFA0764F.toInt()))
+            return
+        }
+        val trunkH = (if (m < 60) lerp(10f, 46f, m / 60f) else lerp(46f, 62f, (m - 60) / 120f)) * u
+        val trunkW = (if (m < 60) lerp(3f, 7f, m / 60f) else lerp(7f, 10f, (m - 60) / 120f)) * u
+        val top = ground - trunkH
+        val wood = paint(0xFF8B5E3C.toInt())
+        c.drawRoundRect(RectF(cx - trunkW / 2, top, cx + trunkW / 2, ground + 2 * u), trunkW / 2, trunkW / 2, wood)
+        val leaf = paint(0xFF34D27B.toInt())
+        val leaf2 = paint(0xFF24B064.toInt())
+        if (m < 60) {
+            val s = lerp(6f, 14f, m / 50f) * u
+            c.drawOval(RectF(cx - 2 * s, top - s * 0.6f, cx, top + s * 0.3f), leaf)
+            c.drawOval(RectF(cx, top - s * 0.8f, cx + 2 * s, top + s * 0.2f), leaf)
+        }
+        if (m >= 50) {
+            val bp = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF8B5E3C.toInt(); strokeWidth = lerp(2.5f, 4f, (m - 50) / 130f) * u; strokeCap = Paint.Cap.ROUND; style = Paint.Style.STROKE }
+            val dx = lerp(12f, 20f, (m - 50) / 70f) * u
+            c.drawLine(cx, top + trunkH * 0.45f, cx - dx, top + trunkH * 0.45f - lerp(10f, 16f, (m - 50) / 70f) * u, bp)
+            c.drawLine(cx, top + trunkH * 0.3f, cx + dx, top + trunkH * 0.3f - lerp(12f, 18f, (m - 50) / 70f) * u, bp)
+        }
+        if (m >= 60) {
+            val r = lerp(20f, 34f, (m - 60) / 120f) * u
+            val cy = top - r * 0.55f
+            c.drawCircle(cx - r * 0.75f, cy + r * 0.35f, r * 0.68f, leaf2)
+            c.drawCircle(cx + r * 0.75f, cy + r * 0.35f, r * 0.68f, leaf2)
+            c.drawCircle(cx, cy, r, leaf)
+            c.drawCircle(cx - r * 0.25f, cy - r * 0.35f, r * 0.45f, paint(0x8C6EE7A1.toInt()))
+            val spots = arrayOf(floatArrayOf(-0.55f, -0.25f), floatArrayOf(0.5f, -0.4f), floatArrayOf(-0.15f, -0.75f), floatArrayOf(0.25f, 0.15f), floatArrayOf(-0.6f, 0.25f), floatArrayOf(0.65f, 0.25f), floatArrayOf(0.05f, -0.35f), floatArrayOf(-0.3f, 0.45f), floatArrayOf(0.35f, -0.85f))
+            if (m >= 120) {
+                val n = lerp(3f, 9f, (m - 120) / 60f).toInt()
+                val fl = paint(0xFFFF9CCF.toInt())
+                for (i in 0 until n) c.drawCircle(cx + spots[i][0] * r, cy + spots[i][1] * r, r * 0.1f + u, fl)
+            }
+            if (m >= 180) {
+                val fr = paint(0xFFFF6B4A.toInt())
+                for (i in 0 until 6) c.drawCircle(cx + spots[i][1] * r * 0.9f, cy + spots[i][0] * r * 0.6f + r * 0.15f, r * 0.13f + 1.2f * u, fr)
+            }
+        }
+    }
+
     // ---------------------------------------------------------------- Mi Diario
 
     /** Tus días escritos (la semana) a la izquierda y la pregunta del día, grande, a la derecha. Sin caritas. */

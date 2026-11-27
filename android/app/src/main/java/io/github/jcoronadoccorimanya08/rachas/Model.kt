@@ -76,6 +76,18 @@ data class Frame(
     val prompt: String? = null,
     /** Mi Diario: «hace un año hoy» (solo la carita; 0 si no pusiste). */
     val yearAgoMood: Int? = null,
+    /** Focus Flow: minutos estudiados hoy y la meta (en minutos). */
+    val focusMin: Int? = null,
+    val focusGoal: Int? = null,
+    /** Focus Flow: etapa del arbolito (0 semilla … 5 frutos), su nombre y lo que falta para la siguiente. */
+    val treeStage: Int = 0,
+    val treeLabel: String? = null,
+    val treeNext: String? = null,
+    /** Focus Flow: repasos para hoy. */
+    val reviewsDue: Int = 0,
+    /** Focus Flow: días para tu próximo examen y su nombre corto. */
+    val examIn: Int? = null,
+    val examName: String? = null,
 ) {
     val cycleEnd: LocalDate? get() = start?.plusDays((cycleLength - 1).toLong())
 }
@@ -205,6 +217,14 @@ object Model {
             moods = o.optJSONArray("moods")?.let { arr -> (0 until arr.length()).map { i -> arr.optJSONObject(i)?.optInt("m")?.coerceIn(0, 5) ?: 0 } } ?: emptyList(),
             prompt = o.optString("prompt").takeIf { it.isNotBlank() && !o.isNull("prompt") }?.take(90),
             yearAgoMood = o.optJSONObject("yearAgo")?.optInt("m")?.coerceIn(0, 5),
+            focusMin = int(o, "focusMin")?.coerceAtLeast(0),
+            focusGoal = int(o, "focusGoal")?.coerceAtLeast(1),
+            treeStage = o.optInt("treeStage").coerceIn(0, 5),
+            treeLabel = o.optString("treeLabel").takeIf { it.isNotBlank() && !o.isNull("treeLabel") }?.take(30),
+            treeNext = o.optString("treeNext").takeIf { it.isNotBlank() && !o.isNull("treeNext") }?.take(40),
+            reviewsDue = o.optInt("reviewsDue").coerceIn(0, 999),
+            examIn = int(o, "examIn"),
+            examName = o.optString("examName").takeIf { it.isNotBlank() && !o.isNull("examName") }?.take(28),
             saveGoal = o.optJSONObject("goal")?.let { g ->
                 GoalLine(g.optInt("pct").coerceIn(0, 100), g.optString("name").takeIf { !g.isNull("name") && it.isNotBlank() }?.take(24), dbl(g, "saved"), dbl(g, "target"))
             },

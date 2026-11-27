@@ -78,6 +78,7 @@ class TickReceiver : BroadcastReceiver() {
         BitacoraWidget.updateAll(context)
         BilleFlashWidget.updateAll(context)
         DiarioWidget.updateAll(context)
+        FocusWidget.updateAll(context)
         Ticker.scheduleAll(context)
     }
 }

@@ -207,6 +207,16 @@ class WidgetPreviewTest {
         return payload("midiario", f)
     }
 
+    /** Focus Flow, con datos inventados. */
+    private fun focusPayload(minutes: Int, stage: Int, label: String, next: String?, reviews: Int, exam: Int?): String {
+        val goal = 150
+        val f = JSONObject().put("today", thu.toString()).put("dayNumber", 12).put("streak", 4).put("todayPct", minOf(100, minutes * 100 / goal))
+            .put("days", days(thu, listOf(100, 60, 100, 30, 100, 0, minOf(100, minutes * 100 / goal)), 1))
+            .put("focusMin", minutes).put("focusGoal", goal).put("treeStage", stage).put("treeLabel", label).put("treeNext", next ?: JSONObject.NULL)
+            .put("reviewsDue", reviews).put("examIn", exam ?: JSONObject.NULL).put("examName", if (exam != null) "Parcial" else JSONObject.NULL)
+        return payload("focusflow", f)
+    }
+
     // ------------------------------------------------------------ Dibujo
 
     private fun store(app: String, json: String?) {
@@ -274,6 +284,14 @@ class WidgetPreviewTest {
             store("midiario", json)
             all.add(name to widgetBitmap("midiario", now))
         }
+        for ((name, json, now) in listOf(
+            Triple("focus-1-semilla", focusPayload(0, 0, "Semilla", "25 min: brota el tronco", 0, null), at("2026-11-26T09:00:00")),
+            Triple("focus-2-hojas", focusPayload(75, 3, "Se llena de hojas", "45 min: florece", 2, 12), at("2026-11-26T16:00:00")),
+            Triple("focus-3-frutos", focusPayload(190, 5, "Da frutos", null, 0, 1), at("2026-11-26T21:00:00")),
+        )) {
+            store("focusflow", json)
+            all.add(name to widgetBitmap("focusflow", now))
+        }
         all.forEach { (name, bmp) -> save(onWallpaper(listOf(bmp)), File(out, "$name.png")) }
         // La pantalla de inicio: Bitácora arriba y Val Q abajo, como en tu teléfono.
         save(onWallpaper(listOf(all.first { it.first == "bitacora-1-dia-limpio" }.second, all.first { it.first == "valq-1-dia-ganado" }.second)), File(out, "pantalla.png"))
@@ -284,6 +302,7 @@ class WidgetPreviewTest {
             save(all.first { it.first == "bitacora-1-dia-limpio" }.second, File(res, "preview_bitacora.png"))
             save(all.first { it.first == "billeflash-1-dentro" }.second, File(res, "preview_billeflash.png"))
             save(all.first { it.first == "diario-3-escrito" }.second, File(res, "preview_diario.png"))
+            save(all.first { it.first == "focus-2-hojas" }.second, File(res, "preview_focus.png"))
         }
     }
 
