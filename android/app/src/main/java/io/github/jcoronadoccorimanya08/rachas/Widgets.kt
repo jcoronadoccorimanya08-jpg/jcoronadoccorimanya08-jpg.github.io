@@ -165,8 +165,8 @@ object WidgetRenderer {
         return views
     }
 
-    /** BilleFlash cambia de día a las 4:00 (si anotas de madrugada, todavía es «ayer»). */
-    const val BF_DAY_START = 4
+    /** BilleFlash y Mi Diario cambian de día a las 00:00, como el calendario. */
+    const val BF_DAY_START = 0
 
     fun billeFlashDay(now: ZonedDateTime): LocalDate = now.minusHours(BF_DAY_START.toLong()).toLocalDate()
 

@@ -98,7 +98,6 @@ object Reminder {
         // Lo del modo prueba no cuenta: la fecha es simulada.
         val vq = Model.pick(WidgetStore.load(context, "valq")?.takeUnless { it.test }, today)
         val bt = Model.pick(WidgetStore.load(context, "bitacora")?.takeUnless { it.test }, today)
-        // BilleFlash: su día cambia a las 4:00, pero a las 22:30 es el mismo día del calendario.
         val bf = WidgetStore.load(context, "billeflash")?.let { Model.pick(it, today) }
         val df = WidgetStore.load(context, "midiario")?.let { Model.pick(it, today) }
         val msg = compose(vq, bt, bf, df) ?: return

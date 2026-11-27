@@ -375,7 +375,8 @@ class WidgetPreviewTest {
 
     @Test
     fun billeFlashCambiaDeDiaALas4() {
-        assertEquals(LocalDate.parse("2026-11-26"), WidgetRenderer.billeFlashDay(at("2026-11-27T02:45:00")))
+        assertEquals(LocalDate.parse("2026-11-27"), WidgetRenderer.billeFlashDay(at("2026-11-27T00:00:00")))
+        assertEquals(LocalDate.parse("2026-11-26"), WidgetRenderer.billeFlashDay(at("2026-11-26T23:59:00")))
         assertEquals(LocalDate.parse("2026-11-27"), WidgetRenderer.billeFlashDay(at("2026-11-27T04:00:00")))
         val f = Model.parse(billePayload(billeFrame(thu, 6, listOf(100), 28.0, 46.7, 520.5, 60, null, "Cobrar a Ana hoy")))!!.frames.first()
         assertEquals(28.0, f.spent!!, 0.001)
