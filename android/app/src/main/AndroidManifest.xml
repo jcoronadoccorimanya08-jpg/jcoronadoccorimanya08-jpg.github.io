@@ -105,6 +105,10 @@
 
         <!-- Cambia el widget de día a medianoche, lo despierta a las 21:00 y lanza el recordatorio de las 22:30. -->
         <receiver
+            android:name=".FocusAlarmReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".TickReceiver"
             android:exported="false">
             <intent-filter>

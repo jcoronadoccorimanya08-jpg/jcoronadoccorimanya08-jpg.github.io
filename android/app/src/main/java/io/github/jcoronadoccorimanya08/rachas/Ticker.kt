@@ -79,6 +79,7 @@ class TickReceiver : BroadcastReceiver() {
         BilleFlashWidget.updateAll(context)
         DiarioWidget.updateAll(context)
         FocusWidget.updateAll(context)
+        if (intent.action == Intent.ACTION_BOOT_COMPLETED) FocusAlarm.restore(context)
         Ticker.scheduleAll(context)
     }
 }

@@ -80,6 +80,11 @@ abstract class TwaLauncherActivity : Activity() {
         }
 
         override fun onPostMessage(message: String, extras: Bundle?) {
+            // Focus Flow: programa (o cancela) la alarma del fin de la sesión.
+            if (appKey == "focusflow" && FocusAlarm.handle(applicationContext, message)) {
+                session?.postMessage(MSG_TIMER, null)
+                return
+            }
             // Confirma a la página que el widget quedó actualizado.
             if (WidgetStore.save(applicationContext, appKey, message)) {
                 Diag.mark(applicationContext, appKey, Diag.SAVED)
@@ -207,6 +212,7 @@ abstract class TwaLauncherActivity : Activity() {
         const val EXTRA_URGE = "urgencia"
         const val MSG_HELLO = "rachas:hola"
         const val MSG_SAVED = "rachas:ok"
+        const val MSG_TIMER = "rachas:alarma"
         private const val PREFS = "app"
         private const val KEY_ASKED = "asked_notifications"
         private const val REQ_NOTIFICATIONS = 7
